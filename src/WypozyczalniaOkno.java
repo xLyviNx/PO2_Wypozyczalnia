@@ -13,7 +13,7 @@ public class WypozyczalniaOkno extends Application {
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Wypożyczalnia");
 
-        Parent root = FXMLLoader.load(getClass().getResource("fxml/test1.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("fxml/register_scene.fxml"));
 
         Scene scene = new Scene(root, 1280, 720);
 
