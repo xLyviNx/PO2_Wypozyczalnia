@@ -2,10 +2,10 @@
 {
     -fx-background-color: rgb(184, 189, 197);
 }
+
 .cent
 {
     -fx-alignment: center;
-    -fx-padding: 10;
 }
 .mainScreenbutton
 {
@@ -14,4 +14,11 @@
     -fx-background-insets: 5px;
     -fx-background-color: rgb(224, 224, 224);
     -fx-background-radius: 0
+}
+.mainScreenbutton:hover {
+    -fx-background-color: rgb(208, 224, 219);
+}
+
+.mainScreenbutton:pressed {
+    -fx-background-color: rgb(255, 255, 255);
 }

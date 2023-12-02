@@ -9,27 +9,27 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1280.0" styleClass="bg" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fxml.StronaStartowaController">
    <children>
-      <VBox prefHeight="800.0" prefWidth="1280.0" styleClass="cent" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <VBox layoutX="14.0" layoutY="14.0" prefHeight="800.0" prefWidth="1280.0" styleClass="cent" AnchorPane.bottomAnchor="-14.0" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="-14.0" AnchorPane.topAnchor="14.0">
          <children>
             <HBox prefHeight="52.0" prefWidth="600.0" styleClass="cent">
                <children>
-                  <Label prefHeight="63.0" prefWidth="298.0" text="Wypożyczalnia Samochdów" textAlignment="CENTER">
+                  <Label contentDisplay="CENTER" prefHeight="66.0" prefWidth="1306.0" styleClass="cent" text="Wypożyczalnia Samochdów" textAlignment="CENTER" textFill="WHITE">
                      <font>
-                        <Font size="24.0" />
+                        <Font name="Verdana" size="45.0" />
                      </font>
                   </Label>
                </children>
             </HBox>
-            <HBox prefHeight="52.0" prefWidth="600.0" styleClass="cent">
+            <HBox prefHeight="90.0" prefWidth="1260.0" styleClass="cent">
                <children>
-                  <Button fx:id="buttonLogowanie1" mnemonicParsing="false" onAction="#handleButtonLogowanieAction" prefHeight="52.0" prefWidth="121.0" styleClass="mainScreenbutton" text="Logowanie" textAlignment="CENTER">
+                  <Button fx:id="buttonLogowanie1" mnemonicParsing="false" onAction="#handleButtonLogowanieAction" prefHeight="75.0" prefWidth="250.0" styleClass="mainScreenbutton" text="Logowanie" textAlignment="CENTER" textFill="#b8bdc5">
                      <font>
-                        <Font size="14.0" />
+                        <Font name="Corbel" size="29.0" />
                      </font>
                   </Button>
-                  <Button fx:id="buttonRejestracja1" mnemonicParsing="false" prefHeight="52.0" prefWidth="121.0" styleClass="mainScreenbutton" text="Rejestracja" textAlignment="CENTER">
+                  <Button fx:id="buttonRejestracja1" mnemonicParsing="false" prefHeight="75.0" prefWidth="250.0" styleClass="mainScreenbutton" text="Rejestracja" textAlignment="CENTER" textFill="#b8bdc5">
                      <font>
-                        <Font size="14.0" />
+                        <Font name="Corbel" size="29.0" />
                      </font>
                   </Button>
                </children>
