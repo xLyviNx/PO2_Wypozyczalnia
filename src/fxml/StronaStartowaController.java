@@ -39,7 +39,9 @@ public class StronaStartowaController {
         Parent root = loader.load();
 
         // Tworzenie nowej sceny
-        Scene scene = new Scene(root);
+        Scene scene = new Scene(root, 1280, 720);
+        String css = this.getClass().getResource("/fxml/style1.css").toExternalForm();
+        scene.getStylesheets().add(css);
 
         // Uzyskanie dostępu do głównego okna (Stage) i ustawienie nowej sceny
         WypozyczalniaOkno.getPrimaryStage().setScene(scene);
@@ -53,7 +55,9 @@ public class StronaStartowaController {
         Parent root = loader.load();
 
         // Tworzenie nowej sceny
-        Scene scene = new Scene(root);
+        Scene scene = new Scene(root, 1280, 720);
+        String css = this.getClass().getResource("/fxml/style1.css").toExternalForm();
+        scene.getStylesheets().add(css);
 
         // Uzyskanie dostępu do głównego okna (Stage) i ustawienie nowej sceny
         WypozyczalniaOkno.getPrimaryStage().setScene(scene);
