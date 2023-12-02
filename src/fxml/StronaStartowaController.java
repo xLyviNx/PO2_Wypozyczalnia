@@ -31,7 +31,7 @@ public class StronaStartowaController {
     }
 
     @FXML
-    private void handleButtonLogowanieAction(ActionEvent event) throws IOException
+    public void handleButtonLogowanieAction(ActionEvent event) throws IOException
     {
         System.out.println("Button logowanie click!");
         // Ładowanie nowego widoku (FXML) z pliku Logowanie.fxml
@@ -44,4 +44,19 @@ public class StronaStartowaController {
         // Uzyskanie dostępu do głównego okna (Stage) i ustawienie nowej sceny
         WypozyczalniaOkno.getPrimaryStage().setScene(scene);
     }
+    @FXML
+    public void handleButtonRegisterAction(ActionEvent event) throws IOException
+    {
+        System.out.println("Button logowanie click!");
+        // Ładowanie nowego widoku (FXML) z pliku Logowanie.fxml
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("register_scene.fxml"));
+        Parent root = loader.load();
+
+        // Tworzenie nowej sceny
+        Scene scene = new Scene(root);
+
+        // Uzyskanie dostępu do głównego okna (Stage) i ustawienie nowej sceny
+        WypozyczalniaOkno.getPrimaryStage().setScene(scene);
+    }
+
 }
