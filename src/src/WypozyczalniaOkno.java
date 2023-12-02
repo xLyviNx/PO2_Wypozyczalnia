@@ -1,0 +1,44 @@
+package src;
+
+import fxml.StronaStartowaController;
+import fxml.StronaStartowaController;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+
+public class WypozyczalniaOkno extends Application {
+
+    private static Stage primaryStage; //Pole do przechowywania referencji do głównego okna
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        WypozyczalniaOkno.primaryStage = primaryStage;
+        primaryStage.setTitle("Wypożyczalnia");
+
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/StronaStartowa.fxml"));
+        Parent root = loader.load();
+
+        // Pobieranie kontrolera z załadowanego pliku FXML
+        StronaStartowaController controller = loader.getController();
+
+        // Ustawianie funkcji obsługi przycisku w kontrolerze
+        controller.setWypozyczalniaOkno(this);
+
+        Scene scene = new Scene(root, 1280, 720);
+
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    // Metoda do uzyskiwania dostępu do głównego okna
+    public static Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fxml.LogowanieController">
+   <children>
+      <Label layoutX="151.0" layoutY="28.0" prefHeight="63.0" prefWidth="298.0" text="Wypożyczalnia Samochdów" textAlignment="CENTER">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Label alignment="TOP_CENTER" layoutX="257.0" layoutY="91.0" text="Zaloguj się" textAlignment="CENTER">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Label>
+      <Label layoutX="286.0" layoutY="141.0" text="Login" textAlignment="CENTER" />
+      <Label layoutX="286.0" layoutY="200.0" text="Hasło" textAlignment="CENTER" />
+      <TextField fx:id="userLogin" layoutX="227.0" layoutY="165.0" />
+      <PasswordField fx:id="userPassword" layoutX="227.0" layoutY="225.0" />
+      <Button fx:id="buttonZaloguj" layoutX="274.0" layoutY="262.0" mnemonicParsing="false" text="Zaloguj" />
+      <Label layoutX="235.0" layoutY="305.0" text="Nie masz konta?">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Label>
+      <Button fx:id="buttonRejestracja" layoutX="255.0" layoutY="345.0" mnemonicParsing="false" text="Zarejestruj się" />
+   </children>
+</AnchorPane>
