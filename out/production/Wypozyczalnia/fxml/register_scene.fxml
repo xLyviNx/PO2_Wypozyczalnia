@@ -26,10 +26,10 @@
       <Text layoutX="269.0" layoutY="123.0" strokeType="OUTSIDE" strokeWidth="0.0" text="podaj login" />
       <Text layoutX="269.0" layoutY="179.0" strokeType="OUTSIDE" strokeWidth="0.0" text="podaj hasło" />
       <Text layoutX="263.0" layoutY="236.0" strokeType="OUTSIDE" strokeWidth="0.0" text="powtórz hasło" />
-      <TextField fx:id="emailfield" layoutX="225.0" layoutY="303.0" promptText="login" />
+      <TextField fx:id="emailfield" layoutX="225.0" layoutY="303.0" promptText="e-mail" />
       <Text layoutX="249.0" layoutY="293.0" strokeType="OUTSIDE" strokeWidth="0.0" text="podaj adres E-mail" />
       <Button fx:id="register_button" layoutX="253.0" layoutY="340.0" mnemonicParsing="false" text="Zarejestruj się" />
-      <Text layoutX="434.0" layoutY="161.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Jendak masz już konto ?" textAlignment="CENTER" wrappingWidth="149.60000000000014">
+      <Text layoutX="434.0" layoutY="161.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Jednak masz już konto ?" textAlignment="CENTER" wrappingWidth="149.60000000000014">
          <font>
             <Font size="18.0" />
          </font>

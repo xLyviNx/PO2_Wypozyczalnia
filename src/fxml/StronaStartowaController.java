@@ -40,7 +40,7 @@ public class StronaStartowaController {
 
         // Tworzenie nowej sceny
         Scene scene = new Scene(root, 1280, 720);
-        String css = this.getClass().getResource("/fxml/style1.css").toExternalForm();
+        String css = this.getClass().getResource("style1.css").toExternalForm();
         scene.getStylesheets().add(css);
 
         // Uzyskanie dostępu do głównego okna (Stage) i ustawienie nowej sceny
@@ -56,7 +56,7 @@ public class StronaStartowaController {
 
         // Tworzenie nowej sceny
         Scene scene = new Scene(root, 1280, 720);
-        String css = this.getClass().getResource("/fxml/style1.css").toExternalForm();
+        String css = this.getClass().getResource("style1.css").toExternalForm();
         scene.getStylesheets().add(css);
 
         // Uzyskanie dostępu do głównego okna (Stage) i ustawienie nowej sceny
