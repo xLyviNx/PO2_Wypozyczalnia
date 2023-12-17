@@ -35,6 +35,8 @@ public class LogowanieController {
     {
         String login = userLogin.getText();
         String receivedPassword = userPassword.getText();
+
+
         String realPassword = "admin";
 
 

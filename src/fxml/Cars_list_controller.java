@@ -45,22 +45,22 @@ public class Cars_list_controller  {
     }
 
 
-//    public static class ImageItem {
-//        private final String description;
-//        private final Image image;
-//
-//        public ImageItem(String description, Image image) {
-//            this.description = description;
-//            this.image = image;
-//        }
-//
-//        public String getDescription() {
-//            return description;
-//        }
-//
-//        public Image getImage() {
-//            return image;
-//        }
-//    }
+    public static class ImageItem {
+        private final String description;
+        private final Image image;
+
+        public ImageItem(String description, Image image) {
+            this.description = description;
+            this.image = image;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public Image getImage() {
+            return image;
+        }
+    }
 }
 
