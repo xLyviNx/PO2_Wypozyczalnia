@@ -22,17 +22,17 @@ import java.io.IOException;
 import java.awt.*;
 
 public class Cars_list_controller  {
+
+    @FXML
+    private ListView<String> list;
     @FXML
     public void initialize() {
-        ListView<String> list = new ListView<String>();
-       list.getItems().add("raz");
-       list.getItems().add("raz");
-        ObservableList<String> items = FXCollections.observableArrayList("Single","double");
-        list.setItems(items);
+    list.getItems().add("raz");
         System.out.println("lista");
 
     }
 
+    @FXML
     public void load_scene() throws IOException
     {
 
