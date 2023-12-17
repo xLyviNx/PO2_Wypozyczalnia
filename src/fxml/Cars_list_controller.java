@@ -11,6 +11,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ListCell;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.Parent;
@@ -24,14 +25,35 @@ import java.awt.*;
 public class Cars_list_controller  {
 
     @FXML
-    private ListView<String> list;
+    private ListView<ImageItem> list;
     @FXML
     public void initialize() {
-    list.getItems().add("raz");
+    list.getItems().add(new ImageItem("tank",new Image("./src/Tank jednostka.png")));
         System.out.println("lista");
 
-    }
+        list.setCellFactory(param -> new ListCell<ImageItem>() {
+            private final ImageView imageView = new ImageView();
 
+            {
+                imageView.setFitWidth(100);
+                imageView.setFitHeight(100);
+            }
+
+            @Override
+            protected void updateItem(ImageItem item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    imageView.setImage(item.getImage());
+                    setGraphic(imageView);
+                    setText(item.getDescription());
+                }
+            }
+        });
+
+    }
     @FXML
     public void load_scene() throws IOException
     {
