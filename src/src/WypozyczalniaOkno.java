@@ -32,6 +32,14 @@ public class WypozyczalniaOkno extends Application {
         scene.getStylesheets().add(css);
         primaryStage.setScene(scene);
         primaryStage.show();
+
+
+        /*while (true)
+            if (Client.instance == null || !Client.instance.socket.isConnected())
+                primaryStage.close();
+
+        PRZEZ TO JEST BRAK ODPOWIEDZI NWM JAK ZROBIC BO TO MIALO OKNO ZAMYKAC JAK NIE MA POLACZENIA
+                */
     }
 
     // Metoda do uzyskiwania dostępu do głównego okna
