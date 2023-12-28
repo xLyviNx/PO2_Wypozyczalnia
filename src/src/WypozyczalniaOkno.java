@@ -1,7 +1,6 @@
 package src;
 
-import fxml.StronaStartowaController;
-import fxml.StronaStartowaController;
+import fxml.StartPageController;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -18,11 +17,11 @@ public class WypozyczalniaOkno extends Application {
         WypozyczalniaOkno.primaryStage = primaryStage;
         primaryStage.setTitle("Wypożyczalnia");
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/StronaStartowa.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/StartPage.fxml"));
         Parent root = loader.load();
 
         // Pobieranie kontrolera z załadowanego pliku FXML
-        StronaStartowaController controller = loader.getController();
+        StartPageController controller = loader.getController();
 
         // Ustawianie funkcji obsługi przycisku w kontrolerze
         controller.setWypozyczalniaOkno(this);
@@ -32,6 +31,7 @@ public class WypozyczalniaOkno extends Application {
         scene.getStylesheets().add(css);
         primaryStage.setScene(scene);
         primaryStage.show();
+
 
 
         /*while (true)

@@ -3,11 +3,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.event.ActionEvent;
 
-import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -15,7 +11,7 @@ import javafx.scene.Parent;
 import java.io.IOException;
 
 import src.WypozyczalniaOkno;
-public class StronaStartowaController {
+public class StartPageController {
     @FXML
     private Button buttonLogowanie;
 
@@ -51,7 +47,7 @@ public class StronaStartowaController {
     {
         System.out.println("Button logowanie click!");
         // Ładowanie nowego widoku (FXML) z pliku Logowanie.fxml
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("register_scene.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("RegisterScene.fxml"));
         Parent root = loader.load();
 
         // Tworzenie nowej sceny

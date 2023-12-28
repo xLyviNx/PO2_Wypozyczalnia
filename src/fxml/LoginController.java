@@ -9,9 +9,7 @@ import javafx.scene.control.TextField;
 
 import java.io.IOException;
 
-import fxml.Cars_list_controller;
-
-public class LogowanieController {
+public class LoginController {
     @FXML
     private Button buttonLogIn;
 
@@ -27,7 +25,7 @@ public class LogowanieController {
     @FXML
     private void GoToRegister(ActionEvent event) throws IOException
     {
-        StronaStartowaController obj = new StronaStartowaController();
+        StartPageController obj = new StartPageController();
         obj.handleButtonRegisterAction(event);
     }
     @FXML
@@ -46,8 +44,8 @@ public class LogowanieController {
         if (login.equals("admin") && receivedPassword.equals("admin"))
         {
             showAlert("Zalogowano pomyślnie!");
-            Cars_list_controller cars_list_controller = new Cars_list_controller();
-            cars_list_controller.load_scene();
+            OffersController offersController = new OffersController();
+            offersController.load_scene();
 
         }
         else

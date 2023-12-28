@@ -9,7 +9,7 @@ import javafx.scene.control.TextField;
 
 import java.io.IOException;
 
-public class controller_register {
+public class RegisterController {
 
     @FXML
     private Button backbutton;
@@ -31,7 +31,7 @@ public class controller_register {
     @FXML
     private void BackToLogin(ActionEvent event) throws IOException
     {
-        StronaStartowaController obj= new StronaStartowaController();
+        StartPageController obj= new StartPageController();
         obj.handleButtonLogowanieAction(event);
     }
 
