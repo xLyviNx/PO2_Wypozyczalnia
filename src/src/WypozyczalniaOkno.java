@@ -45,6 +45,20 @@ public class WypozyczalniaOkno extends Application {
         instance = this;
     }
 
+    public void MainScene()
+    {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    StartPageController spage = new StartPageController();
+                    spage.load_scene();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+    }
     public void NoConnection() {
         Platform.runLater(new Runnable() {
             @Override

@@ -20,7 +20,7 @@
                   </Label>
                </children>
             </HBox>
-            <Button id="restartbutton" mnemonicParsing="false" prefHeight="102.0" prefWidth="491.0" text="Uruchom ponownie">
+            <Button id="restartbutton" onAction="#RestartButton" mnemonicParsing="false" prefHeight="102.0" prefWidth="491.0" text="Uruchom ponownie">
                <font>
                   <Font name="Verdana" size="20.0" />
                </font>

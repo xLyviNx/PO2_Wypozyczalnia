@@ -25,7 +25,15 @@ public class StartPageController {
     {
         this.wypozyczalniaOkno = wypozyczalniaOkno;
     }
-
+    @FXML
+    public void load_scene() throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/StartPage.fxml"));
+        Parent root = loader.load();
+        Scene scene = new Scene(root, 1280, 720);
+        String css = this.getClass().getResource("/fxml/style1.css").toExternalForm();
+        scene.getStylesheets().add(css);
+        WypozyczalniaOkno.getPrimaryStage().setScene(scene);
+    }
     @FXML
     public void handleButtonLogowanieAction(ActionEvent event) throws IOException
     {

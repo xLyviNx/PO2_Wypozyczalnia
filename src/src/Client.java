@@ -12,8 +12,8 @@ public class Client {
     private DataOutputStream output;
     private BufferedInputStream bufInput;
     private BufferedOutputStream bufOutput;
-    public void start(String address, int port) {
-        if (instance != null)
+    public void start(String address, int port) throws Exception {
+        if (instance != null && instance!=this)
             return;
         //NetData dat = new NetData("TEST");
         while(WypozyczalniaOkno.instance == null)
@@ -48,25 +48,16 @@ public class Client {
                 }catch (SocketException socketexc)
                 {
                     System.out.println("ERROR PINGING");
-                    if(WypozyczalniaOkno.instance != null)
-                    {
-                        WypozyczalniaOkno.instance.NoConnection();
-                    }
+                    throw new DisconnectException();
                 }
             }
             System.out.println("DISCONNECTED.");
         } catch (ConnectException e) {
             System.out.println("Nie można połączyć się z serwerem: " + e.getMessage());
-            if(WypozyczalniaOkno.instance != null)
-            {
-                WypozyczalniaOkno.instance.NoConnection();
-            }
+            throw new DisconnectException();
         } catch (IOException e) {
             e.printStackTrace();
-            if(WypozyczalniaOkno.instance != null)
-            {
-                WypozyczalniaOkno.instance.NoConnection();
-            }
+            throw new DisconnectException();
         } finally {
             try {
                 if (input != null) {
@@ -85,6 +76,8 @@ public class Client {
 
         if (instance==this)
             instance=null;
+        System.out.println("DC");
+        return;
     }
     String SendRequest(String request)
     {
@@ -92,3 +85,4 @@ public class Client {
     }
 
 }
+

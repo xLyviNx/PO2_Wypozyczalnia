@@ -1,6 +1,8 @@
 package src;
 
 import java.io.IOException;
+import java.nio.file.attribute.AclEntryType;
+import java.util.Set;
 
 public class Main
 {
@@ -25,9 +27,36 @@ public class Main
 
         }
         System.out.println("Client is starting...");
-        Client cl = new Client();
-        Thread clTh = new Thread(() -> cl.start("localhost", 12345));
-        clTh.start();
+        RunClient();
         WypozyczalniaOkno.main(args);
+    }
+    public static void RunClient()
+    {
+        /*Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        for (Thread t: threadSet) {
+            if (t.isAlive())
+            System.out.println(t.getName());
+        }*/
+        Client cl;
+        if (Client.instance != null)
+        {
+            cl=Client.instance;
+        }else {
+            cl = new Client();
+        }
+        Thread clTh = new Thread(() -> {
+            try {
+                cl.start("localhost", 12345);
+            } catch (DisconnectException e) {
+                if (WypozyczalniaOkno.instance != null)
+                    WypozyczalniaOkno.instance.NoConnection();
+                throw e;
+            }catch (Exception ex)
+            {
+
+            }
+        });
+        clTh.setName("CLIENT THREAD");
+        clTh.start();
     }
 }

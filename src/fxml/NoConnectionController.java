@@ -1,25 +1,25 @@
 package fxml;
 
+import javafx.application.Application;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import src.Main;
 import src.WypozyczalniaOkno;
 
 import java.io.IOException;
 
 public class NoConnectionController {
     @FXML
-    public Button restartbutton;
-
-    @FXML
-    public void initialize() {
-        /*
-        restartbutton.setOnAction(event -> {
-            // Code to execute when the button is clicked
-            System.out.println("Restart button clicked!");
-        });*/
+    public void RestartButton() {
+        System.out.println("RESTART");
+        Main.RunClient();
+        if (WypozyczalniaOkno.instance == null){
+            WypozyczalniaOkno.getPrimaryStage().close();
+        }
+        WypozyczalniaOkno.instance.MainScene();
     }
 
     @FXML
