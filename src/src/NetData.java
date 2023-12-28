@@ -6,9 +6,11 @@ import java.util.ArrayList;
 
 public class NetData
 {
+    boolean success;
     ArrayList<String> Strings = new ArrayList<String>();
     ArrayList<Integer> Integers= new ArrayList<Integer>();
     ArrayList<Boolean> Booleans= new ArrayList<Boolean>();
+    ArrayList<Byte[]> Images = new ArrayList<>();
 
     public NetData(String str)
     {
