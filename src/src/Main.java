@@ -28,7 +28,6 @@ public class Main
         Client cl = new Client();
         Thread clTh = new Thread(() -> cl.start("localhost", 12345));
         clTh.start();
-
         WypozyczalniaOkno.main(args);
     }
 }

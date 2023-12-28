@@ -1,16 +1,27 @@
 package src;
 
+import fxml.NoConnectionController;
 import fxml.StartPageController;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-
 public class WypozyczalniaOkno extends Application {
 
+    public static WypozyczalniaOkno instance;
     private static Stage primaryStage; //Pole do przechowywania referencji do głównego okna
+
+    // Metoda do uzyskiwania dostępu do głównego okna
+    public static Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -31,23 +42,20 @@ public class WypozyczalniaOkno extends Application {
         scene.getStylesheets().add(css);
         primaryStage.setScene(scene);
         primaryStage.show();
-
-
-
-        /*while (true)
-            if (Client.instance == null || !Client.instance.socket.isConnected())
-                primaryStage.close();
-
-        PRZEZ TO JEST BRAK ODPOWIEDZI NWM JAK ZROBIC BO TO MIALO OKNO ZAMYKAC JAK NIE MA POLACZENIA
-                */
+        instance = this;
     }
 
-    // Metoda do uzyskiwania dostępu do głównego okna
-    public static Stage getPrimaryStage() {
-        return primaryStage;
-    }
-
-    public static void main(String[] args) {
-        launch(args);
+    public void NoConnection() {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    NoConnectionController ncon = new NoConnectionController();
+                    ncon.load_scene();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
     }
 }
