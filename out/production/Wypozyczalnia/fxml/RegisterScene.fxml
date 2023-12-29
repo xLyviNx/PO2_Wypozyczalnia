@@ -44,17 +44,17 @@
                                           <TextField id="input_pwd2" fx:id="pass_field" promptText="haslo" />
                                           <HBox layoutX="10.0" layoutY="52.0" prefHeight="20.0" prefWidth="198.0" />
                                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Numer telefonu" />
-                                          <TextField id="input_nrtel" fx:id="emailfield" promptText="numer tel" />
+                                          <TextField id="input_nrtel" fx:id="numer_field" promptText="numer tel" />
                                           <HBox layoutX="10.0" layoutY="196.0" prefHeight="20.0" prefWidth="198.0" />
                                           <Text layoutX="67.0" layoutY="229.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Imie i Nazwisko" />
                                           <HBox>
                                              <children>
-                                                <TextField id="input_imie" fx:id="emailfield1" promptText="Imie" />
-                                                <TextField id="input_nazwisko" fx:id="emailfield11" layoutX="10.0" layoutY="10.0" promptText="Nazwisko" />
+                                                <TextField id="input_imie" fx:id="imie_field" promptText="Imie" />
+                                                <TextField id="input_nazwisko" fx:id="nazwisko_field" layoutX="10.0" layoutY="10.0" promptText="Nazwisko" />
                                              </children>
                                           </HBox>
                                           <HBox layoutX="10.0" layoutY="225.0" prefHeight="20.0" prefWidth="198.0" />
-                                          <Button id="btn_reg" fx:id="register_button" mnemonicParsing="false" prefHeight="36.0" prefWidth="155.0" text="Zarejestruj się" />
+                                          <Button id="btn_reg" fx:id="register_button" mnemonicParsing="false" prefHeight="36.0" prefWidth="155.0" text="Zarejestruj się" onAction="#RegisterButton" />
                                           <HBox layoutX="11.0" layoutY="305.0" prefHeight="20.0" prefWidth="198.0" />
                                        </children>
                                     </VBox>

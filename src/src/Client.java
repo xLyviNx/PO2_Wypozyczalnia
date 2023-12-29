@@ -45,7 +45,8 @@ public class Client {
                 try {
                     output.writeUTF("ping");
                     output.flush();
-                }catch (SocketException socketexc)
+                }
+                catch (SocketException socketexc)
                 {
                     System.out.println("ERROR PINGING");
                     throw new DisconnectException();
@@ -79,10 +80,32 @@ public class Client {
         System.out.println("DC");
         return;
     }
-    String SendRequest(String request)
+    public void RequestRegister(String username, String pwd, String pwdR, int phone, String imie, String nazwisko)
     {
-        return "";
+        NetData request = new NetData(NetData.Operation.Register);
+        request.Strings.add(username);
+        request.Strings.add(MD5Encryptor.encryptPassword(pwd));
+        request.Strings.add(MD5Encryptor.encryptPassword(pwdR));
+        request.Integers.add(phone);
+        request.Strings.add(imie);
+        request.Strings.add(nazwisko);
+        SendRequest(request);
     }
 
+    void SendRequest(NetData request)
+    {
+        if (output != null && socket != null)
+        {
+            try {
+                output.writeUTF(request.toJSON());
+                output.flush();
+            }
+            catch (Exception e)
+            {
+                System.out.println("ERROR SENDING REQUEST");
+                throw new DisconnectException();
+            }
+        }
+    }
 }
 
