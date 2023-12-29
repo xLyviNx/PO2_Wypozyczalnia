@@ -22,3 +22,8 @@
 .mainScreenbutton:pressed {
     -fx-background-color: rgb(255, 255, 255);
 }
+
+#registerborder
+{
+    -fx-border-color:black;
+}

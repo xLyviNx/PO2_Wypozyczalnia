@@ -3,37 +3,96 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
 <AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="@style1.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fxml.RegisterController">
    <children>
-      <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ffffff00" height="305.0" layoutX="201.0" layoutY="71.0" stroke="BLACK" strokeType="INSIDE" width="200.0" />
-      <TextField fx:id="login_field" layoutX="225.0" layoutY="131.0" promptText="login" />
-      <Text layoutX="155.0" layoutY="60.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Wypożyczalnia Samochodów " wrappingWidth="289.38671875">
-         <font>
-            <Font size="22.0" />
-         </font>
-      </Text>
-      <Text layoutX="257.0" layoutY="94.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Rejestracja">
-         <font>
-            <Font size="18.0" />
-         </font>
-      </Text>
-      <TextField fx:id="pass_field" layoutX="225.0" layoutY="187.0" promptText="haslo" />
-      <TextField fx:id="rep_pass_field" layoutX="226.0" layoutY="244.0" promptText="haslo" />
-      <Text layoutX="269.0" layoutY="123.0" strokeType="OUTSIDE" strokeWidth="0.0" text="podaj login" />
-      <Text layoutX="269.0" layoutY="179.0" strokeType="OUTSIDE" strokeWidth="0.0" text="podaj hasło" />
-      <Text layoutX="263.0" layoutY="236.0" strokeType="OUTSIDE" strokeWidth="0.0" text="powtórz hasło" />
-      <TextField fx:id="emailfield" layoutX="225.0" layoutY="303.0" promptText="e-mail" />
-      <Text layoutX="249.0" layoutY="293.0" strokeType="OUTSIDE" strokeWidth="0.0" text="podaj adres E-mail" />
-      <Button fx:id="register_button" layoutX="253.0" layoutY="340.0" mnemonicParsing="false" text="Zarejestruj się" />
-      <Text layoutX="434.0" layoutY="161.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Jednak masz już konto ?" textAlignment="CENTER" wrappingWidth="149.60000000000014">
-         <font>
-            <Font size="18.0" />
-         </font>
-      </Text>
-      <Button fx:id="backbutton" layoutX="449.0" layoutY="210.0" mnemonicParsing="false" onAction="#BackToLogin" text="Wróć do logowania" />
+      <HBox alignment="TOP_CENTER" layoutY="45.0" prefHeight="400.0" prefWidth="530.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <BorderPane prefHeight="400.0" prefWidth="410.0">
+               <right>
+                  <BorderPane prefHeight="400.0" prefWidth="123.0" BorderPane.alignment="CENTER">
+                     <center>
+                        <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+                           <children>
+                              <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Jednak masz już konto ?" textAlignment="CENTER" wrappingWidth="149.60000000000014">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Text>
+                              <Button fx:id="backbutton" mnemonicParsing="false" onAction="#BackToLogin" text="Wróć do logowania" />
+                           </children>
+                        </VBox>
+                     </center>
+                  </BorderPane>
+               </right>
+               <center>
+                  <VBox prefHeight="400.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <HBox alignment="CENTER" prefHeight="50.0" prefWidth="450.0" />
+                        <HBox alignment="CENTER" prefHeight="360.0" prefWidth="260.0">
+                           <children>
+                              <BorderPane id="registerborder" prefHeight="287.0" prefWidth="200.0">
+                                 <top>
+                                    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Rejestracja" BorderPane.alignment="CENTER">
+                                       <font>
+                                          <Font size="18.0" />
+                                       </font>
+                                    </Text>
+                                 </top>
+                                 <center>
+                                    <VBox alignment="TOP_CENTER" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+                                       <children>
+                                          <HBox layoutX="10.0" layoutY="114.0" prefHeight="20.0" prefWidth="198.0" />
+                                          <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Login" />
+                                          <TextField fx:id="login_field" promptText="login" />
+                                          <HBox prefHeight="20.0" prefWidth="198.0" />
+                                          <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Hasło" />
+                                          <TextField fx:id="rep_pass_field" promptText="haslo" />
+                                          <HBox layoutX="10.0" layoutY="156.0" prefHeight="20.0" prefWidth="198.0" />
+                                          <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Powtórz Hasło" />
+                                          <TextField fx:id="pass_field" promptText="haslo" />
+                                          <HBox layoutX="10.0" layoutY="52.0" prefHeight="20.0" prefWidth="198.0" />
+                                          <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Numer telefonu" />
+                                          <TextField fx:id="emailfield" promptText="numer tel" />
+                                          <HBox layoutX="10.0" layoutY="196.0" prefHeight="20.0" prefWidth="198.0" />
+                                          <Text layoutX="67.0" layoutY="229.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Imie i Nazwisko" />
+                                          <HBox>
+                                             <children>
+                                                <TextField fx:id="emailfield1" promptText="Imie" />
+                                                <TextField fx:id="emailfield11" layoutX="10.0" layoutY="10.0" promptText="Nazwisko" />
+                                             </children>
+                                          </HBox>
+                                          <HBox layoutX="10.0" layoutY="225.0" prefHeight="20.0" prefWidth="198.0" />
+                                       </children>
+                                    </VBox>
+                                 </center>
+                                 <bottom>
+                                    <VBox alignment="TOP_CENTER" prefHeight="45.0" prefWidth="198.0" BorderPane.alignment="CENTER">
+                                       <children>
+                                          <Button fx:id="register_button" mnemonicParsing="false" prefHeight="36.0" prefWidth="155.0" text="Zarejestruj się" />
+                                       </children>
+                                    </VBox>
+                                 </bottom>
+                              </BorderPane>
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </center>
+               <top>
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Wypożyczalnia Samochodów " textAlignment="CENTER" wrappingWidth="289.38671875" BorderPane.alignment="CENTER">
+                     <font>
+                        <Font size="22.0" />
+                     </font>
+                  </Text>
+               </top>
+            </BorderPane>
+         </children>
+      </HBox>
    </children>
 </AnchorPane>
