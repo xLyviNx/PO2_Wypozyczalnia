@@ -35,7 +35,7 @@ public class Client {
             Scanner scanner = new Scanner(System.in);
             String receivedString;
 
-            while (socket.isConnected())
+            while (socket.isConnected() && WypozyczalniaOkno.instance != null)
             {
                 try {
                     TimeUnit.SECONDS.sleep(1);
