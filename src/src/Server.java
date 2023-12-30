@@ -176,6 +176,7 @@ public class Server {
                                             dbh.close();
                                             break;
                                         }
+                                        //System.out.println(existsquery);
                                         ResultSet existing = dbh.executeQuery(existsquery);
                                         try {
                                             if (!existing.isClosed() && existing.next())

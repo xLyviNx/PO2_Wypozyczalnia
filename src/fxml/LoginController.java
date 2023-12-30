@@ -33,18 +33,16 @@ public class LoginController {
     @FXML
     private void handleLogInButton(ActionEvent event) throws IOException
     {
-        String login = userLogin.getText();
-        String receivedPassword = userPassword.getText();
+        String login = userLogin.getText().trim();
+        String receivedPassword = userPassword.getText().trim();
         if (login.isEmpty() || receivedPassword.isEmpty())
         {
             Client.MessageBox("Nie podano wszystkich danych!", Alert.AlertType.ERROR);
             return;
         }
-
-        String password = MD5Encryptor.encryptPassword(receivedPassword);
         if (Client.instance != null)
         {
-            Client.instance.RequestLogin(login, password);
+            Client.instance.RequestLogin(login, receivedPassword);
         }
     }
 }
