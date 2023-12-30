@@ -2,16 +2,16 @@
 {
         -fx-background-color: rgb(34, 51, 77);
 }
-
+.offersBg
+{
+    -fx-background-color: rgb(255, 51, 77);
+}
 .cent
 {
     -fx-alignment: center;
 }
 .mainScreenbutton
 {
-    -fx-padding: 5px;
-    -fx-border-insets: 5px;
-    -fx-background-insets: 5px;
     -fx-background-color: rgb(224, 224, 224);
     -fx-background-radius: 0
 }
@@ -28,4 +28,9 @@
     -fx-padding: 5px;
     -fx-border-insets: 5px;
     -fx-border-color:white;
+}
+.offerScroll
+{
+    -fx-background: rgba(0,0,0, 0.15);
+    -fx-background-color: transparent;
 }

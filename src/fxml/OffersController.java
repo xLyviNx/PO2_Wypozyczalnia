@@ -1,5 +1,7 @@
 package fxml;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.FlowPane;
 import src.WypozyczalniaOkno;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
@@ -19,8 +21,10 @@ public class OffersController {
     @FXML
     private ListView<ImageItem> list;
     @FXML
+    private FlowPane flow;
+    @FXML
     public void initialize() {
-    list.getItems().add(new ImageItem("tank",new Image("./src/Tank jednostka.png")));
+    /*list.getItems().add(new ImageItem("tank",new Image("./src/Tank jednostka.png")));
         System.out.println("lista");
 
         list.setCellFactory(param -> new ListCell<ImageItem>() {
@@ -44,7 +48,7 @@ public class OffersController {
                 }
             }
         });
-
+     */
     }
     @FXML
     public void load_scene() throws IOException
@@ -54,6 +58,8 @@ public class OffersController {
 
         Parent root = loader.load();
         Scene scene = new Scene(root, 1280, 720);
+        String css = this.getClass().getResource("/fxml/style1.css").toExternalForm();
+        scene.getStylesheets().add(css);
         WypozyczalniaOkno.getPrimaryStage().setScene(scene);
 
     }

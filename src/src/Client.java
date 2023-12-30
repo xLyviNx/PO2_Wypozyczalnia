@@ -165,12 +165,13 @@ public class Client {
         request.Strings.add(nazwisko);//4
         SendRequest(request);
     }
-    public void RequestLogin(String username, String pwd) throws DisconnectException
+    public void RequestLogin(String username, String pwd)
     {
         NetData request = new NetData(NetData.Operation.Login);
         request.Strings.add(username);//0
         request.Strings.add(MD5Encryptor.encryptPassword(pwd));//1
         SendRequest(request);
+
     }
     public static void MessageBox(String content, Alert.AlertType mtype)
     {
@@ -196,6 +197,8 @@ public class Client {
             catch (Exception e)
             {
                 System.out.println("ERROR SENDING REQUEST");
+                if (WypozyczalniaOkno.instance != null)
+                    WypozyczalniaOkno.instance.NoConnection();
                 throw new DisconnectException();
             }
         }

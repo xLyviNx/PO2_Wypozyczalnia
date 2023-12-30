@@ -27,6 +27,8 @@ public class NoConnectionController {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/NoConnection.fxml"));
         Parent root = loader.load();
         Scene scene = new Scene(root, 1280, 720);
+        String css = this.getClass().getResource("/fxml/style1.css").toExternalForm();
+        scene.getStylesheets().add(css);
         WypozyczalniaOkno.getPrimaryStage().setScene(scene);
     }
 }
