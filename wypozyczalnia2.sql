@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 29, 2023 at 01:57 PM
+-- Generation Time: Dec 30, 2023 at 04:54 PM
 -- Wersja serwera: 10.4.32-MariaDB
 -- Wersja PHP: 8.0.30
 
@@ -76,6 +76,13 @@ CREATE TABLE `uzytkownicy` (
   `typy_uzytkownikow_id_typu` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `uzytkownicy`
+--
+
+INSERT INTO `uzytkownicy` (`id_uzytkownika`, `login`, `password`, `imie`, `nazwisko`, `data_utworzenia`, `numer_telefonu`, `typy_uzytkownikow_id_typu`) VALUES
+(5, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'System', 'Administrator', '2023-12-30 16:51:20', 123456789, 1);
+
 -- --------------------------------------------------------
 
 --
@@ -141,7 +148,7 @@ ALTER TABLE `typy_uzytkownikow`
 -- AUTO_INCREMENT for table `uzytkownicy`
 --
 ALTER TABLE `uzytkownicy`
-  MODIFY `id_uzytkownika` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_uzytkownika` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `wypozyczenie`
