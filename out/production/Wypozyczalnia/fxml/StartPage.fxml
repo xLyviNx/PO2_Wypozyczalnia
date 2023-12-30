@@ -22,12 +22,12 @@
             </HBox>
             <HBox styleClass="cent">
                <children>
-                  <Button fx:id="buttonLogowanie1" mnemonicParsing="false" onAction="#handleButtonLogowanieAction" prefHeight="75.0" prefWidth="250.0" styleClass="mainScreenbutton" text="Logowanie" textAlignment="CENTER" textFill="#b8bdc5">
+                  <Button fx:id="buttonLogowanie1" mnemonicParsing="false" onAction="#handleButtonLogowanieAction" prefHeight="75.0" prefWidth="250.0" styleClass="mainScreenbutton" text="Logowanie" textAlignment="CENTER" textFill="#22334d">
                      <font>
                         <Font name="Corbel" size="29.0" />
                      </font>
                   </Button>
-                  <Button fx:id="buttonRejestracja1" mnemonicParsing="false" prefHeight="75.0" prefWidth="250.0" styleClass="mainScreenbutton" text="Rejestracja" textAlignment="CENTER" textFill="#b8bdc5" onAction="#handleButtonRegisterAction">
+                  <Button fx:id="buttonRejestracja1" mnemonicParsing="false" onAction="#handleButtonRegisterAction" prefHeight="75.0" prefWidth="250.0" styleClass="mainScreenbutton" text="Rejestracja" textAlignment="CENTER" textFill="#22334d">
                      <font>
                         <Font name="Corbel" size="29.0" />
                      </font>

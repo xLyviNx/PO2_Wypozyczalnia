@@ -39,7 +39,7 @@ public class StartPageController {
     {
         System.out.println("Button logowanie click!");
         // Ładowanie nowego widoku (FXML) z pliku Logowanie.fxml
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("Logowanie.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("LogowanieNEW.fxml"));
         Parent root = loader.load();
 
         // Tworzenie nowej sceny
@@ -54,7 +54,6 @@ public class StartPageController {
     public void handleButtonRegisterAction(ActionEvent event) throws IOException
     {
         System.out.println("Button REGISTER click!");
-        // Ładowanie nowego widoku (FXML) z pliku Logowanie.fxml
         FXMLLoader loader = new FXMLLoader(getClass().getResource("RegisterScene.fxml"));
         Parent root = loader.load();
 

@@ -38,7 +38,6 @@ public class RegisterController {
     @FXML
     public void initialize()
     {
-
         numer_field.addEventFilter(KeyEvent.KEY_TYPED, event -> {
             String input = event.getCharacter();
             if (!input.matches("\\d*") || numer_field.getText().length() >= 9) {

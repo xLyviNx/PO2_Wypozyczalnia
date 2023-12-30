@@ -15,7 +15,7 @@
          <children>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
                <children>
-                  <Label prefHeight="63.0" prefWidth="298.0" text="Wypożyczalnia Samochdów" textAlignment="CENTER">
+                  <Label prefHeight="63.0" prefWidth="298.0" text="Wypożyczalnia Samochdów" textAlignment="CENTER" textFill="WHITE">
                      <font>
                         <Font size="24.0" />
                      </font>
@@ -24,7 +24,7 @@
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
                <children>
-                  <Label alignment="TOP_CENTER" stylesheets="@style1.css" text="Zaloguj się" textAlignment="CENTER">
+                  <Label alignment="TOP_CENTER" stylesheets="@style1.css" text="Zaloguj się" textAlignment="CENTER" textFill="WHITE">
                      <font>
                         <Font size="18.0" />
                      </font>
@@ -33,7 +33,7 @@
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
                <children>
-                  <Label text="Login" textAlignment="CENTER" />
+                  <Label text="Login" textAlignment="CENTER" textFill="WHITE" />
                </children>
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
@@ -43,7 +43,7 @@
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
                <children>
-                  <Label text="Hasło" textAlignment="CENTER" />
+                  <Label text="Hasło" textAlignment="CENTER" textFill="WHITE" />
                </children>
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
@@ -53,12 +53,12 @@
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
                <children>
-                  <Button fx:id="buttonZaloguj" mnemonicParsing="false" onAction="#handleLogInButton" text="Zaloguj" />
+                  <Button fx:id="buttonZaloguj" mnemonicParsing="false" onAction="#handleLogInButton" prefHeight="44.0" prefWidth="89.0" styleClass="mainScreenbutton" text="Zaloguj" />
                </children>
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
                <children>
-                  <Label text="Nie masz konta?">
+                  <Label text="Nie masz konta?" textFill="WHITE">
                      <font>
                         <Font size="18.0" />
                      </font>
@@ -67,7 +67,7 @@
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0" styleClass="cent">
                <children>
-                  <Button fx:id="buttonRejestracja" mnemonicParsing="false" onAction="#GoToRegister" text="Zarejestruj się" />
+                  <Button fx:id="buttonRejestracja" mnemonicParsing="false" onAction="#GoToRegister" prefHeight="40.0" prefWidth="113.0" styleClass="mainScreenbutton" text="Zarejestruj się" />
                </children>
             </HBox>
          </children>
