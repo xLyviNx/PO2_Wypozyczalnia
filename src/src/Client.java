@@ -1,4 +1,7 @@
 package src;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+
 import java.net.*;
 import java.io.*;
 import java.nio.Buffer;
@@ -32,26 +35,68 @@ public class Client {
             output = new DataOutputStream(socket.getOutputStream());
             bufInput = new BufferedInputStream(input);
             bufOutput = new BufferedOutputStream(output);
-            Scanner scanner = new Scanner(System.in);
             String receivedString;
 
+            Thread pings = new Thread(()->
+            {
+                while (socket.isConnected() && WypozyczalniaOkno.instance != null)
+                {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException iex) {
+                        throw new RuntimeException(iex);
+                    }
+                    try {
+                        output.writeUTF("ping");
+                        output.flush();
+                    }
+                    catch (SocketException socketexc)
+                    {
+                        System.out.println("ERROR PINGING");
+                        socketexc.printStackTrace();
+                        throw new DisconnectException();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            pings.start();
             while (socket.isConnected() && WypozyczalniaOkno.instance != null)
             {
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException iex) {
-                    throw new RuntimeException(iex);
-                }
-                try {
-                    output.writeUTF("ping");
-                    output.flush();
-                }
-                catch (SocketException socketexc)
+                receivedString = input.readUTF();
+                if (receivedString != null && !receivedString.isEmpty())
                 {
-                    System.out.println("ERROR PINGING");
-                    throw new DisconnectException();
+                    System.out.println(receivedString);
+                    try {
+                        NetData data = NetData.fromJSON(receivedString);
+                        if (data!=null)
+                        {
+                            if (data.operationType== NetData.OperationType.Error)
+                            {
+                                MessageBox(data.Strings.get(0), Alert.AlertType.ERROR);
+                            }
+                            else if (data.operationType == NetData.OperationType.MessageBox)
+                            {
+                                MessageBox(data.Strings.get(0), Alert.AlertType.INFORMATION);
+                            }
+                            else if (data.operation== NetData.Operation.Register)
+                            {
+                               if (data.operationType == NetData.OperationType.Success)
+                               {
+                                    MessageBox("Zarejestrowano.", Alert.AlertType.INFORMATION);
+                               }
+                            }
+                        }
+                    }catch (Exception ex)
+                    {
+                        //NOT JSON
+                        System.out.println("RECEIVED NOT JSON, " + receivedString);
+                        ex.printStackTrace();
+                    }
+
                 }
             }
+
             System.out.println("DISCONNECTED.");
         } catch (ConnectException e) {
             System.out.println("Nie można połączyć się z serwerem: " + e.getMessage());
@@ -80,19 +125,31 @@ public class Client {
         System.out.println("DC");
         return;
     }
-    public void RequestRegister(String username, String pwd, String pwdR, int phone, String imie, String nazwisko)
+    public void RequestRegister(String username, String pwd, String pwdR, int phone, String imie, String nazwisko) throws DisconnectException
     {
         NetData request = new NetData(NetData.Operation.Register);
-        request.Strings.add(username);
-        request.Strings.add(MD5Encryptor.encryptPassword(pwd));
-        request.Strings.add(MD5Encryptor.encryptPassword(pwdR));
-        request.Integers.add(phone);
-        request.Strings.add(imie);
-        request.Strings.add(nazwisko);
+        request.Strings.add(username);//0
+        request.Strings.add(MD5Encryptor.encryptPassword(pwd));//1
+        request.Strings.add(MD5Encryptor.encryptPassword(pwdR));//2
+        request.Integers.add(phone);//0
+        request.Strings.add(imie);//3
+        request.Strings.add(nazwisko);//4
         SendRequest(request);
     }
-
-    void SendRequest(NetData request)
+    public static void MessageBox(String content, Alert.AlertType mtype)
+    {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Alert errorAlert = new Alert(mtype);
+                errorAlert.setTitle(mtype == Alert.AlertType.ERROR? "BŁĄD" : "Informacja");
+                errorAlert.setHeaderText(null);
+                errorAlert.setContentText(content);
+                errorAlert.show();
+            }
+        });
+    }
+    void SendRequest(NetData request) throws DisconnectException
     {
         if (output != null && socket != null)
         {

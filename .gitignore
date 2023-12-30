@@ -23,3 +23,9 @@
 hs_err_pid*
 replay_pid*
 .idea/misc.xml
+
+
+#INCLUDE
+!mysql-connector-j-8.2.0.jar
+!gson-2.10.1.jar
+!ojdbc11.jar

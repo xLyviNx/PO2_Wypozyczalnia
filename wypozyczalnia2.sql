@@ -68,7 +68,7 @@ INSERT INTO `typy_uzytkownikow` (`id_typu`, `nazwa_typu`, `dodajogloszenia`, `wy
 CREATE TABLE `uzytkownicy` (
   `id_uzytkownika` int(11) NOT NULL,
   `login` varchar(32) NOT NULL,
-  `password` varchar(24) NOT NULL,
+  `password` varchar(32) NOT NULL,
   `imie` varchar(15) DEFAULT NULL,
   `nazwisko` varchar(32) DEFAULT NULL,
   `data_utworzenia` datetime NOT NULL,

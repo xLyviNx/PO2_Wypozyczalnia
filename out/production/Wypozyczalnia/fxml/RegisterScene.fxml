@@ -8,6 +8,7 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
+<?import javafx.scene.control.PasswordField?>
 <AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="@style1.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fxml.RegisterController">
    <children>
       <VBox alignment="CENTER" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -38,10 +39,10 @@
                                           <TextField id="input_login" fx:id="login_field" promptText="login" />
                                           <HBox prefHeight="20.0" prefWidth="198.0" />
                                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Hasło" />
-                                          <TextField id="input_pwd" fx:id="rep_pass_field" promptText="haslo" />
+                                          <PasswordField id="input_pwd" fx:id="pass_field" promptText="haslo" />
                                           <HBox layoutX="10.0" layoutY="156.0" prefHeight="20.0" prefWidth="198.0" />
                                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Powtórz Hasło" />
-                                          <TextField id="input_pwd2" fx:id="pass_field" promptText="haslo" />
+                                          <PasswordField id="input_pwd2" fx:id="rep_pass_field" promptText="haslo" />
                                           <HBox layoutX="10.0" layoutY="52.0" prefHeight="20.0" prefWidth="198.0" />
                                           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Numer telefonu" />
                                           <TextField id="input_nrtel" fx:id="numer_field" promptText="numer tel" />
@@ -54,7 +55,7 @@
                                              </children>
                                           </HBox>
                                           <HBox layoutX="10.0" layoutY="225.0" prefHeight="20.0" prefWidth="198.0" />
-                                          <Button id="btn_reg" fx:id="register_button" mnemonicParsing="false" prefHeight="36.0" prefWidth="155.0" text="Zarejestruj się" onAction="#RegisterButton" />
+                                          <Button id="btn_reg" fx:id="register_button" mnemonicParsing="false" onAction="#RegisterButton" prefHeight="36.0" prefWidth="155.0" text="Zarejestruj się" />
                                           <HBox layoutX="11.0" layoutY="305.0" prefHeight="20.0" prefWidth="198.0" />
                                        </children>
                                     </VBox>
