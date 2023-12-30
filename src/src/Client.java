@@ -108,7 +108,7 @@ public class Client {
                                         public void run() {
                                             OffersController offers = new OffersController();
                                             try {
-                                                //offers.load_scene();
+                                                offers.load_scene();
                                             } catch (IOException e) {
                                                 throw new RuntimeException(e);
                                             }
