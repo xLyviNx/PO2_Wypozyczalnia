@@ -27,7 +27,7 @@
                         <Font name="Corbel" size="29.0" />
                      </font>
                   </Button>
-                  <Button fx:id="buttonRejestracja1" mnemonicParsing="false" prefHeight="75.0" prefWidth="250.0" styleClass="mainScreenbutton" text="Rejestracja" textAlignment="CENTER" textFill="#b8bdc5">
+                  <Button fx:id="buttonRejestracja1" mnemonicParsing="false" prefHeight="75.0" prefWidth="250.0" styleClass="mainScreenbutton" text="Rejestracja" textAlignment="CENTER" textFill="#b8bdc5" onAction="#handleButtonRegisterAction">
                      <font>
                         <Font name="Corbel" size="29.0" />
                      </font>

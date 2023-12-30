@@ -64,6 +64,7 @@ public class Server {
                                 if (session.isSignedIn)
                                 {
                                     SendError(output, "Jestes juz zalogowany!", response);
+                                    break;
                                 }
                                 else
                                 {
@@ -107,11 +108,15 @@ public class Server {
                                                                 response.operationType = NetData.OperationType.Success;
                                                                 output.writeUTF(response.toJSON());
                                                                 output.flush();
+                                                                session.isSignedIn=true;
+                                                                session.username = data.Strings.get(0);
+                                                                dbh.close();
                                                                 break;
                                                             }
                                                             else
                                                             {
                                                                 SendError(output, "Nie udalo sie zarejestrowac.", response);
+                                                                dbh.close();
                                                                 break;
                                                             }
                                                         }
@@ -203,5 +208,6 @@ public class Server {
 class User
 {
     public boolean isSignedIn;
+    public String username;
     public Socket clientSocket;
 }

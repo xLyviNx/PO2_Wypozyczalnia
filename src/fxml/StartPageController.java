@@ -53,7 +53,7 @@ public class StartPageController {
     @FXML
     public void handleButtonRegisterAction(ActionEvent event) throws IOException
     {
-        System.out.println("Button logowanie click!");
+        System.out.println("Button REGISTER click!");
         // Ładowanie nowego widoku (FXML) z pliku Logowanie.fxml
         FXMLLoader loader = new FXMLLoader(getClass().getResource("RegisterScene.fxml"));
         Parent root = loader.load();

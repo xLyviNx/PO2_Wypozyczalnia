@@ -1,4 +1,5 @@
 package src;
+import fxml.OffersController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
@@ -84,6 +85,17 @@ public class Client {
                                if (data.operationType == NetData.OperationType.Success)
                                {
                                     MessageBox("Zarejestrowano.", Alert.AlertType.INFORMATION);
+                                    Platform.runLater(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            OffersController offers = new OffersController();
+                                            try {
+                                                offers.load_scene();
+                                            } catch (IOException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        }
+                                    });
                                }
                             }
                         }

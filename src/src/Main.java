@@ -48,6 +48,7 @@ public class Main
             try {
                 cl.start("localhost", 12345);
             } catch (DisconnectException e) {
+                System.out.println("NO CONNECTION");
                 if (WypozyczalniaOkno.instance != null)
                     WypozyczalniaOkno.instance.NoConnection();
                 throw e;
