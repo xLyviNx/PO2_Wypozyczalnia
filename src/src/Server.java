@@ -86,7 +86,7 @@ public class Server {
                                                 {
                                                     String existsquery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE `login` = \"" + data.Strings.get(0) + "\" OR numer_telefonu = " + numtel + ";";
                                                     DatabaseHandler dbh = new DatabaseHandler();
-                                                    if (dbh == null || dbh.conn.isClosed())
+                                                    if (dbh.conn == null || dbh.conn.isClosed())
                                                     {
                                                         SendError(output, "Blad polaczenia z baza danych.", response);
                                                         dbh.close();
@@ -149,6 +149,64 @@ public class Server {
                                         break;
                                     }
                                 }
+                            }
+                            case Login:
+                            {
+                                System.out.println("Received LOGIN Request from " + socket + " with DATA: " + data.toJSON());
+                                NetData response = new NetData(NetData.Operation.Login);
+                                if (session.isSignedIn)
+                                {
+                                    SendError(output, "Jestes juz zalogowany!", response);
+                                    break;
+                                }
+                                else {
+                                    if (data.Strings.size() == 2) //czy jest 2 stringow
+                                    {
+                                        for (String s : data.Strings) // sprawdzenie czy ktorys ze stringow jest pusty
+                                        {
+                                            if (s.isEmpty()) {
+                                                SendError(output, "Zadne pole nie moze byc puste!", response);
+                                            }
+                                        }
+
+                                        String existsquery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE `login` = \"" + data.Strings.get(0) + "\" AND password = \"" + data.Strings.get(1) + "\";";
+                                        DatabaseHandler dbh = new DatabaseHandler();
+                                        if (dbh.conn == null || dbh.conn.isClosed()) {
+                                            SendError(output, "Blad polaczenia z baza danych.", response);
+                                            dbh.close();
+                                            break;
+                                        }
+                                        ResultSet existing = dbh.executeQuery(existsquery);
+                                        try {
+                                            if (!existing.isClosed() && existing.next())
+                                            {
+                                                session.isSignedIn=true;
+                                                session.username=data.Strings.get(0);
+                                                response.operationType = NetData.OperationType.Success;
+                                                output.writeUTF(response.toJSON());
+                                                output.flush();
+                                                dbh.close();
+                                                break;
+                                            }
+                                            else
+                                            {
+                                                SendError(output, "Nie udalo sie zalogowac! Upewnij sie ze dane sa poprawne!", response);
+                                                dbh.close();
+                                                break;
+                                            }
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        } finally {
+                                            try {
+                                                existing.close();
+                                            } catch (SQLException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                            dbh.close();
+                                        }
+                                    }
+                                }
+                                break;
                             }
                             default:
                             {

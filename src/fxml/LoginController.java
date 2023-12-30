@@ -6,6 +6,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import src.Client;
+import src.MD5Encryptor;
 
 import java.io.IOException;
 
@@ -33,38 +35,16 @@ public class LoginController {
     {
         String login = userLogin.getText();
         String receivedPassword = userPassword.getText();
-
-
-        String realPassword = "admin";
-
-
-        //Dodac weryfikacji loginu i hasła z bazy danych
-
-        // Sprawdź, czy login i hasło to "admin"
-        if (login.equals("admin") && receivedPassword.equals("admin"))
+        if (login.isEmpty() || receivedPassword.isEmpty())
         {
-            showAlert("Zalogowano pomyślnie!");
-            OffersController offersController = new OffersController();
-            offersController.load_scene();
+            Client.MessageBox("Nie podano wszystkich danych!", Alert.AlertType.ERROR);
+            return;
+        }
 
-        }
-        else
+        String password = MD5Encryptor.encryptPassword(receivedPassword);
+        if (Client.instance != null)
         {
-            showAlert("Błędny login lub hasło!");
+            Client.instance.RequestLogin(login, password);
         }
-        //logowanie dla zwyklego uzytkownika
-        if (realPassword.equals(receivedPassword))
-        {
-            showAlert("zalogowano");
-        }
-        else showAlert("bledne haslo");
-    }
-    private void showAlert(String message)
-    {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Komunikat");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 }

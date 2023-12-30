@@ -98,6 +98,24 @@ public class Client {
                                     });
                                }
                             }
+                            else if (data.operation== NetData.Operation.Login)
+                            {
+                                if (data.operationType == NetData.OperationType.Success)
+                                {
+                                    MessageBox("Zalogowano.", Alert.AlertType.INFORMATION);
+                                    Platform.runLater(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            OffersController offers = new OffersController();
+                                            try {
+                                                //offers.load_scene();
+                                            } catch (IOException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        }
+                                    });
+                                }
+                            }
                         }
                     }catch (Exception ex)
                     {
@@ -146,6 +164,13 @@ public class Client {
         request.Integers.add(phone);//0
         request.Strings.add(imie);//3
         request.Strings.add(nazwisko);//4
+        SendRequest(request);
+    }
+    public void RequestLogin(String username, String pwd) throws DisconnectException
+    {
+        NetData request = new NetData(NetData.Operation.Login);
+        request.Strings.add(username);//0
+        request.Strings.add(MD5Encryptor.encryptPassword(pwd));//1
         SendRequest(request);
     }
     public static void MessageBox(String content, Alert.AlertType mtype)
