@@ -120,8 +120,7 @@ public class Client {
                     }catch (Exception ex)
                     {
                         //NOT JSON
-                        System.out.println("RECEIVED NOT JSON, " + receivedString);
-                        ex.printStackTrace();
+                        System.out.println("JSON FAILED. DATA IS PROBABLY NOT JSON NETDATA." + receivedString);
                     }
 
                 }
