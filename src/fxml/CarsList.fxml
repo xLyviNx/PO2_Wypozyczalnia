@@ -15,7 +15,7 @@
          <children>
             <VBox alignment="TOP_RIGHT">
                <children>
-                  <Label alignment="CENTER_RIGHT" prefHeight="56.0" prefWidth="1280.0" text="user" textAlignment="RIGHT" textFill="WHITE">
+                  <Label fx:id="usernameText" alignment="CENTER_RIGHT" prefHeight="56.0" prefWidth="1280.0" text="user" textAlignment="RIGHT" textFill="WHITE">
                      <font>
                         <Font name="Calibri Light" size="32.0" />
                      </font>
@@ -26,7 +26,7 @@
                         <Insets right="10.0" />
                      </padding>
                   </Label>
-                  <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" styleClass="mainScreenbutton" text="Wyloguj" textAlignment="CENTER" textFill="#243461">
+                  <Button fx:id="logOutButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" styleClass="mainScreenbutton" text="Wyloguj" textAlignment="CENTER" textFill="#243461">
                      <padding>
                         <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
                      </padding>
