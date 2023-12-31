@@ -1,17 +1,34 @@
 package src;
 
-import com.google.gson.*;
-
-import java.lang.reflect.Type;
+import java.io.*;
 import java.util.ArrayList;
 
-public class NetData {
+public class NetData implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    public enum Operation {
+        Unspecified,
+        Register,
+        Login,
+        OfferElement,
+        OfferUsername,
+        Ping,
+        Exit,
+    }
+
+    public enum OperationType {
+        Unspecified,
+        Success,
+        Error,
+        MessageBox
+    }
+
     public OperationType operationType;
     public Operation operation;
-    public ArrayList<String> Strings = new ArrayList<String>();
-    public ArrayList<Integer> Integers = new ArrayList<Integer>();
-    public ArrayList<Float> Floats = new ArrayList<Float>();
-    public ArrayList<Boolean> Booleans = new ArrayList<Boolean>();
+    public ArrayList<String> Strings = new ArrayList<>();
+    public ArrayList<Integer> Integers = new ArrayList<>();
+    public ArrayList<Float> Floats = new ArrayList<>();
+    public ArrayList<Boolean> Booleans = new ArrayList<>();
     public ArrayList<byte[]> Images = new ArrayList<>();
 
     public NetData(Operation op, String str) {
@@ -21,62 +38,22 @@ public class NetData {
 
     public NetData(Operation op) {
         operation = op;
-        System.out.println(toJSON());
     }
 
-    public String toJSON() {
-        Gson gson = new GsonBuilder()
-                .registerTypeAdapter(Operation.class, new EnumSerializer())
-                .registerTypeAdapter(OperationType.class, new EnumSerializer())
-                .create();
-        return gson.toJson(this);
-    }
-
-    public static NetData fromJSON(String json) {
-        Gson gson = new GsonBuilder()
-                .registerTypeAdapter(Operation.class, new EnumDeserializer<>(Operation.class))
-                .registerTypeAdapter(OperationType.class, new EnumDeserializer<>(OperationType.class))
-                .create();
-        return gson.fromJson(json, NetData.class);
-    }
-
-    public static enum Operation {
-        Unspecified,
-        Register,
-        Login,
-        OfferElement,
-        OfferUsername,
-
-    }
-
-    public static enum OperationType {
-        Unspecified,
-        Success,
-        Error,
-        MessageBox
-    }
-
-    private static class EnumSerializer implements JsonSerializer<Enum<?>> {
-        @Override
-        public JsonElement serialize(Enum<?> src, Type typeOfSrc, JsonSerializationContext context) {
-            JsonObject obj = new JsonObject();
-            obj.addProperty("name", src.name());
-            return obj;
+    // Metoda do zapisywania obiektu do strumienia
+    public static byte[] serialize(NetData netData) throws IOException {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(netData);
+            return bos.toByteArray();
         }
     }
 
-    private static class EnumDeserializer<T extends Enum<T>> implements JsonDeserializer<T> {
-        private final Class<T> enumClass;
-
-        public EnumDeserializer(Class<T> enumClass) {
-            this.enumClass = enumClass;
-        }
-
-        @Override
-        public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-                throws JsonParseException {
-            String name = json.getAsJsonObject().get("name").getAsString();
-            return Enum.valueOf(enumClass, name);
+    // Metoda do deserializacji obiektu z tablicy bajtów
+    public static NetData deserialize(byte[] data) throws IOException, ClassNotFoundException {
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+            return (NetData) ois.readObject();
         }
     }
 }
