@@ -30,9 +30,9 @@
                      <children>
                         <VBox prefHeight="600.0" prefWidth="500.0" spacing="5.0" styleClass="offerButtonBar" HBox.hgrow="ALWAYS">
                            <children>
-                              <HBox alignment="CENTER" minHeight="200.0" minWidth="200.0" prefHeight="500.0" prefWidth="500.0" style="-fx-border-color: red;" styleClass="offerButtonBar" VBox.vgrow="SOMETIMES">
+                              <HBox alignment="CENTER" minHeight="200.0" minWidth="200.0" styleClass="offerButtonBar" VBox.vgrow="ALWAYS">
                                  <children>
-                                    <ImageView fx:id="carphoto" fitHeight="500.0" fitWidth="500.0" pickOnBounds="true" preserveRatio="false" HBox.hgrow="ALWAYS" />
+                                    <ImageView fx:id="carphoto" fitHeight="500.0" fitWidth="500.0" pickOnBounds="true" preserveRatio="true" HBox.hgrow="ALWAYS" />
                                  </children>
                                  <padding>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

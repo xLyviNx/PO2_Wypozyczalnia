@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -12,8 +11,6 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import src.Client;
@@ -23,9 +20,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.Image;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+
 public class OfferDetailsController
 {
     public static OfferDetailsController instance;
@@ -46,7 +42,7 @@ public class OfferDetailsController
     private double ImageWidth;
     private double ImageHeight;
     private double ImageRatio;
-    private VBox imageParent;
+    private HBox imageParent;
     ArrayList<Image> images = new ArrayList<>();
     public static OfferDetailsController openScene(int id) {
         try {
@@ -121,22 +117,29 @@ public class OfferDetailsController
                 checkImage();
             }
         });
-        imageParent = (VBox)carphoto.getParent();
+        imageParent = (HBox)carphoto.getParent();
         ChangeListener<Number> listener = (obs, ov, nv) -> {
-            adjustAspectRatio();
+            adjustSize();
         };
 
         imageParent.widthProperty().addListener(listener);
         imageParent.heightProperty().addListener(listener);
     }
 
-    void adjustAspectRatio() {
+    void adjustSize() {
         if (ImageHeight == 0 || ImageWidth == 0)
             return;
-
-        //ImageRatio, ImageWidth, ImageHeight
-        //image view is carphoto
+        double parentWidth = imageParent.getWidth();
+        double parentHeight = imageParent.getHeight();
+        if (parentWidth / ImageWidth < parentHeight / ImageHeight) {
+            carphoto.setFitWidth(parentWidth);
+        } else {
+            carphoto.setFitHeight(parentHeight);
+        }
+        carphoto.setPreserveRatio(true);
     }
+
+
     public void SetHeader(String header)
     {
         Platform.runLater(new Runnable() {
@@ -208,7 +211,7 @@ public class OfferDetailsController
         ImageHeight = image.getHeight();            //saving the original image size and ratio
          ImageRatio = ImageWidth / ImageHeight;
         carphoto.setImage(image);
-        adjustAspectRatio();
+        adjustSize();
     }
     public void Powrot(MouseEvent mouseEvent)
     {

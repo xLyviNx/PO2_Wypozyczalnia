@@ -30,11 +30,14 @@
                      <children>
                         <VBox prefHeight="600.0" prefWidth="500.0" spacing="5.0" styleClass="offerButtonBar" HBox.hgrow="ALWAYS">
                            <children>
-                              <VBox alignment="CENTER" prefHeight="500.0" prefWidth="500.0" styleClass="offerButtonBar" VBox.vgrow="ALWAYS">
+                              <HBox alignment="CENTER" minHeight="200.0" minWidth="200.0" styleClass="offerButtonBar" VBox.vgrow="ALWAYS">
                                  <children>
-                                    <ImageView fx:id="carphoto" fitHeight="500.0" fitWidth="500.0" pickOnBounds="true" preserveRatio="false" VBox.vgrow="ALWAYS" />
+                                    <ImageView fx:id="carphoto" fitHeight="500.0" fitWidth="500.0" pickOnBounds="true" preserveRatio="true" HBox.hgrow="ALWAYS" />
                                  </children>
-                              </VBox>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                              </HBox>
                               <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="30.0" styleClass="offerButtonBar">
                                  <children>
                                     <Button fx:id="photoprev" minHeight="20.0" minWidth="30.0" mnemonicParsing="false" styleClass="mainScreenbutton" text="&lt;&lt;" textFill="#22334d" visible="false" HBox.hgrow="ALWAYS">
