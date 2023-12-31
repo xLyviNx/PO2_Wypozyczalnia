@@ -88,12 +88,7 @@ public class Client {
                                     Platform.runLater(new Runnable() {
                                         @Override
                                         public void run() {
-                                            OffersController offers = new OffersController();
-                                            try {
-                                                offers.load_scene();
-                                            } catch (IOException e) {
-                                                throw new RuntimeException(e);
-                                            }
+                                            OffersController offers = OffersController.openScene();
                                         }
                                     });
                                }
@@ -106,14 +101,30 @@ public class Client {
                                     Platform.runLater(new Runnable() {
                                         @Override
                                         public void run() {
-                                            OffersController offers = new OffersController();
-                                            try {
-                                                offers.load_scene();
-                                            } catch (IOException e) {
-                                                throw new RuntimeException(e);
-                                            }
+                                            OffersController offers = OffersController.openScene();
                                         }
                                     });
+                                }
+                            }
+                            else if (data.operation == NetData.Operation.OfferUsername)
+                            {
+                                if (data.Strings.size() == 1)
+                                {
+                                    OffersController.setUsername(data.Strings.get(0).trim());
+                                }
+                            }
+                            else if (data.operation == NetData.Operation.OfferElement)
+                            {
+                                if (data.Strings.size() == 1 && data.Floats.size() == 1 && data.Integers.size()==1 && (data.Images.size()==1 || data.Images.size()==0))
+                                {
+                                    System.out.println("ADDING CAR");
+                                    OffersController.AddOfferNode(data.Strings.get(0).trim(), data.Floats.get(0), data.Images.get(0), data.Integers.get(0));
+                                }
+                                else{
+                                    System.out.println(data.Strings.size());
+                                    System.out.println(data.Floats.size());
+                                    System.out.println(data.Integers.size());
+                                    System.out.println(data.Images.size());
                                 }
                             }
                         }
@@ -185,6 +196,16 @@ public class Client {
                 errorAlert.show();
             }
         });
+    }
+    public void RequestUsername()
+    {
+        NetData req = new NetData(NetData.Operation.OfferUsername);
+        SendRequest(req);
+    }
+    public void RequestOffers()
+    {
+        NetData req = new NetData(NetData.Operation.OfferElement);
+        SendRequest(req);
     }
     void SendRequest(NetData request) throws DisconnectException
     {

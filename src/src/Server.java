@@ -4,6 +4,9 @@ import com.mysql.cj.PreparedQuery;
 
 import java.net.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -209,6 +212,56 @@ public class Server {
                                 }
                                 break;
                             }
+                            case OfferUsername:
+                            {
+                                NetData response = new NetData(NetData.Operation.OfferUsername);
+                                response.Booleans.add(session.isSignedIn);
+                                if (session.isSignedIn)
+                                {
+                                    response.Strings.add(session.username);
+                                }
+                                else
+                                {
+                                    response.Strings.add("NIEZALOGOWANY");
+                                }
+                                output.writeUTF(response.toJSON());
+                                output.flush();
+                                break;
+                            }
+                            case OfferElement:
+                            {
+                                String query = "SELECT * FROM `auta` ORDER BY `cenaZaDzien` ASC;";
+                                DatabaseHandler dbh = new DatabaseHandler();
+                                if (dbh.conn == null || dbh.conn.isClosed())
+                                {
+                                    NetData response = new NetData(NetData.Operation.OfferElement);
+                                    SendError(output, "Błąd połączenia z bazą danych.", response);
+                                    dbh.close();
+                                    break;
+                                }
+                                ResultSet result = dbh.executeQuery(query);
+                                while(result.next())
+                                {
+                                    System.out.println("SENDING AN OFFER.");
+                                    NetData response = new NetData(NetData.Operation.OfferElement);
+                                    int id = result.getInt("id_auta");
+                                    String marka = result.getString("marka");
+                                    String model = result.getString("model");
+                                    String silnik = result.getString("silnik");
+                                    int prod = result.getInt("rok_prod");
+                                    float cena = result.getFloat("cenaZaDzien");
+                                    String topText = marka + " " + model + " (" + prod + ") " + silnik;
+                                    response.Strings.add(topText);
+                                    response.Floats.add(cena);
+                                    response.Integers.add(id);
+                                    String zdjecie = result.getString("zdjecie");
+                                    if (!zdjecie.isEmpty())
+                                        response.Images.add(loadImageAsBytes(zdjecie));
+
+                                    output.writeUTF(response.toJSON());
+                                    output.flush();
+                                }
+                            }
                             default:
                             {
                                 System.out.println(socket + " requested unknown operation.");
@@ -245,6 +298,22 @@ public class Server {
                 connectedClients.remove(session);
                 session = null;
             }
+        }
+    }
+    private static byte[] loadImageAsBytes(String imagePath) {
+        try {
+            InputStream stream = Server.class.getResourceAsStream(imagePath);
+            if (stream != null) {
+                return stream.readAllBytes();
+            } else {
+                // Handle the case where the resource is not found
+                System.out.println("Resource not found: " + imagePath);
+                return new byte[0];
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Handle the exception (e.g., log it or return a default image)
+            return new byte[0]; // Return an empty byte array as a placeholder
         }
     }
     void SendError(DataOutputStream output, String error, NetData data) throws IOException {

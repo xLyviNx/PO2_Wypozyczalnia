@@ -6,17 +6,17 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 
 public class NetData {
-    OperationType operationType;
-    Operation operation;
-    ArrayList<String> Strings = new ArrayList<String>();
-    ArrayList<Integer> Integers = new ArrayList<Integer>();
-    ArrayList<Boolean> Booleans = new ArrayList<Boolean>();
-    ArrayList<Byte[]> Images = new ArrayList<>();
+    public OperationType operationType;
+    public Operation operation;
+    public ArrayList<String> Strings = new ArrayList<String>();
+    public ArrayList<Integer> Integers = new ArrayList<Integer>();
+    public ArrayList<Float> Floats = new ArrayList<Float>();
+    public ArrayList<Boolean> Booleans = new ArrayList<Boolean>();
+    public ArrayList<byte[]> Images = new ArrayList<>();
 
     public NetData(Operation op, String str) {
         operation = op;
         Strings.add(str);
-        System.out.println(toJSON());
     }
 
     public NetData(Operation op) {
@@ -44,6 +44,9 @@ public class NetData {
         Unspecified,
         Register,
         Login,
+        OfferElement,
+        OfferUsername,
+
     }
 
     public static enum OperationType {

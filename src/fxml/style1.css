@@ -34,3 +34,18 @@
     -fx-background: rgba(0,0,0, 0.15);
     -fx-background-color: transparent;
 }
+.offerButton
+{
+    -fx-background-color: rgba(0,0,0,0.2);
+}
+.offerButton:hover {
+    -fx-background-color: rgba(0,0,0,0.3);
+}
+.offerButton:pressed {
+    -fx-background-color: rgba(20,30,50,0.7 );
+}
+.offerButtonBar
+{
+    -fx-background: rgba(0,0,0,0.2);
+    -fx-background-color: rgba(0,0,0,0.1);
+}

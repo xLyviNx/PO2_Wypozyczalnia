@@ -11,13 +11,13 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:controller="fxml.OffersController" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1280.0" styleClass="bg" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1280.0" styleClass="bg" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fxml.OffersController">
    <children>
       <VBox alignment="TOP_CENTER" prefHeight="800.0" prefWidth="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
             <VBox alignment="TOP_RIGHT">
                <children>
-                  <Label fx:id="usernameText" alignment="CENTER_RIGHT" prefHeight="56.0" prefWidth="1280.0" text="user" textAlignment="RIGHT" textFill="WHITE">
+                  <Label fx:id="label_user" alignment="CENTER_RIGHT" prefHeight="56.0" prefWidth="1280.0" text="user" textAlignment="RIGHT" textFill="WHITE">
                      <font>
                         <Font name="Calibri Light" size="32.0" />
                      </font>
@@ -28,14 +28,21 @@
                         <Insets right="10.0" />
                      </padding>
                   </Label>
-                  <Button fx:id="logOutButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" styleClass="mainScreenbutton" text="Wyloguj" textAlignment="CENTER" textFill="#243461">
-                     <padding>
-                        <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
-                     </padding>
-                     <font>
-                        <Font size="16.0" />
-                     </font>
-                  </Button>
+                  <HBox alignment="TOP_RIGHT" spacing="5.0">
+                     <children>
+                        <Button fx:id="logOutButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="126.0" styleClass="mainScreenbutton" text="Wyloguj" textAlignment="CENTER" textFill="#243461">
+                           <padding>
+                              <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
+                           </padding>
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                        </Button>
+                     </children>
+                     <VBox.margin>
+                        <Insets />
+                     </VBox.margin>
+                  </HBox>
                </children>
                <padding>
                   <Insets right="10.0" />
