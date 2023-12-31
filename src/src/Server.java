@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Server {
     final int port = 12345;
@@ -21,8 +22,13 @@ public class Server {
         ExecutorService executor = Executors.newCachedThreadPool();
 
         while (true) {
-            Socket clientSocket = serverSocket.accept();
-            executor.submit(() -> handleClient(clientSocket));
+            try {
+                Socket clientSocket = serverSocket.accept();
+                executor.submit(() -> handleClient(clientSocket));
+            }catch(Exception ex)
+            {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -69,6 +75,27 @@ public class Server {
                             case OfferDetails:
                                 handleOfferDetails(data, output);
                                 break;
+                            case Logout:
+                            {
+                                if (session.isSignedIn)
+                                {
+                                    try {
+                                        session.isSignedIn = false;
+                                        session.username = "";
+                                        NetData response = new NetData(NetData.Operation.Logout);
+                                        output.writeObject(response);
+                                        output.flush();
+                                    }catch(Exception ex)
+                                    {
+                                        ex.printStackTrace();
+                                    }
+                                }
+                                else{
+                                    NetData response = new NetData(NetData.Operation.Unspecified);
+                                    SendError(output, "Nie jestes zalogowany!", response);
+                                }
+                                break;
+                            }
                             default:
                                 System.out.println(socket + " requested unknown operation.");
                                 break;
@@ -289,34 +316,53 @@ public class Server {
         output.flush();
     }
 
-    private void handleOfferElement(ObjectOutputStream output) throws IOException, SQLException {
+    private void handleOfferElement(ObjectOutputStream output)  {
         String query = "SELECT `id_auta`,`marka`,`model`,`rok_prod`,`silnik`,`zdjecie`,`opis`,`cenaZaDzien` FROM `auta` ORDER BY `cenaZaDzien` ASC;";
         DatabaseHandler dbh = new DatabaseHandler();
         if (!checkDBConnection(dbh, output)) {
             return;
         }
         ResultSet result = dbh.executeQuery(query);
-        while (result.next()) {
-            System.out.println("SENDING AN OFFER.");
-            NetData response = new NetData(NetData.Operation.OfferElement);
-            int id = result.getInt("id_auta");
-            String marka = result.getString("marka");
-            String model = result.getString("model");
-            String silnik = result.getString("silnik");
-            int prod = result.getInt("rok_prod");
-            float cena = result.getFloat("cenaZaDzien");
-            String topText = marka + " " + model + " (" + prod + ") " + silnik;
-            response.Strings.add(topText);
-            response.Floats.add(cena);
-            response.Integers.add(id);
-            String zdjecie = result.getString("zdjecie");
-            if (!zdjecie.isEmpty()) {
-                byte[] img = loadImageAsBytes(zdjecie);
-                System.out.println("IMG SIZE: " + img.length);
-                response.Images.add(img);
+        try {
+            while (result.next()) {
+                NetData response = new NetData(NetData.Operation.OfferElement);
+                int id = result.getInt("id_auta");
+                String marka = result.getString("marka");
+                String model = result.getString("model");
+                String silnik = result.getString("silnik");
+                int prod = result.getInt("rok_prod");
+                float cena = result.getFloat("cenaZaDzien");
+                String topText = marka + " " + model + " (" + prod + ") " + silnik;
+                response.Strings.add(topText);
+                response.Floats.add(cena);
+                response.Integers.add(id);
+                try {
+                    String zdjecie = result.getString("zdjecie");
+                    if (zdjecie != null && !zdjecie.isEmpty()) {
+                        byte[] img = loadImageAsBytes(zdjecie);
+                        System.out.println("IMG SIZE: " + img.length);
+                        response.Images.add(img);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex.printStackTrace();
+                }
+                output.writeObject(response);
+                output.flush();
+                System.out.println("SENDING AN OFFER.");
+                /*try {
+                    TimeUnit.MILLISECONDS.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }*/
             }
-            output.writeObject(response);
-            output.flush();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         dbh.close();
     }

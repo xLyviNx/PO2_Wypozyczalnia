@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 31, 2023 at 03:09 AM
+-- Generation Time: Dec 31, 2023 at 06:15 PM
 -- Wersja serwera: 10.4.32-MariaDB
 -- Wersja PHP: 8.0.30
 
@@ -35,15 +35,17 @@ CREATE TABLE `auta` (
   `silnik` varchar(32) NOT NULL,
   `zdjecie` varchar(32) DEFAULT NULL,
   `opis` varchar(256) DEFAULT NULL,
-  `cenaZaDzien` decimal(10,2) DEFAULT NULL
+  `cenaZaDzien` decimal(10,2) DEFAULT NULL,
+  `wiekszeZdjecia` varchar(256) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `auta`
 --
 
-INSERT INTO `auta` (`id_auta`, `marka`, `model`, `rok_prod`, `silnik`, `zdjecie`, `opis`, `cenaZaDzien`) VALUES
-(1, 'Alfa Romeo', 'GT', 2004, '1.9 JTD', '/img/cars/alfa_gt.jpg', 'Coupe Alfy, niestety bez lawety w gratisie.', 80.00);
+INSERT INTO `auta` (`id_auta`, `marka`, `model`, `rok_prod`, `silnik`, `zdjecie`, `opis`, `cenaZaDzien`, `wiekszeZdjecia`) VALUES
+(1, 'Alfa Romeo', 'GT', 2004, '1.9 JTD', 'cars/alfa_gt.jpg', 'Coupe Alfy, niestety bez lawety w gratisie.', 80.00, 'cars/alfagt1.jpg;cars/alfagt2.jpg'),
+(2, 'TEST', 'MODEL', 2010, '1.9 TDI', NULL, 'opis test', 20.00, NULL);
 
 -- --------------------------------------------------------
 
@@ -144,7 +146,7 @@ ALTER TABLE `wypozyczenie`
 -- AUTO_INCREMENT for table `auta`
 --
 ALTER TABLE `auta`
-  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `typy_uzytkownikow`

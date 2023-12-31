@@ -15,6 +15,7 @@ public class NetData implements Serializable {
         Ping,
         Exit,
         OfferDetails,
+        Logout,
     }
 
     public enum OperationType {

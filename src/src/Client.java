@@ -2,6 +2,7 @@ package src;
 
 import fxml.OfferDetailsController;
 import fxml.OffersController;
+import fxml.StartPageController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
@@ -96,6 +97,7 @@ public class Client {
     }
 
     private void handleReceivedData(NetData data) throws IOException {
+        System.out.println("RECEIVED DATA");
         if (data.operationType == NetData.OperationType.Error) {
             MessageBox(data.Strings.get(0), Alert.AlertType.ERROR);
         } else if (data.operationType == NetData.OperationType.MessageBox) {
@@ -120,10 +122,17 @@ public class Client {
             }
         } else if (data.operation == NetData.Operation.OfferElement) {
             if (data.Strings.size() == 1 && data.Floats.size() == 1 && data.Integers.size() == 1
-                    && (data.Images.size() == 1 || data.Images.size() == 0)) {
+                    && (data.Images.size() == 1 || data.Images.isEmpty())) {
                 System.out.println("ADDING CAR");
-                OffersController.AddOfferNode(data.Strings.get(0).trim(), data.Floats.get(0), data.Images.get(0),
-                        data.Integers.get(0));
+                try {
+                    byte[] imgs = data.Images.size() >0? data.Images.get(0) : new byte[0];
+                    OffersController.AddOfferNode(data.Strings.get(0).trim(), data.Floats.get(0), imgs,
+                            data.Integers.get(0));
+                }catch(Exception ex)
+                {
+                    ex.printStackTrace();
+                    System.out.println("ERROR ADDING");
+                }
             } else {
                 System.out.println(data.Strings.size());
                 System.out.println(data.Floats.size());
@@ -150,6 +159,19 @@ public class Client {
                 System.out.println("Integers: " + data.Integers.size());
                 System.out.println("Images: " + data.Images.size());
             }
+        } else if (data.operation == NetData.Operation.Logout) {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        StartPageController spc = new StartPageController();
+                        spc.load_scene();
+                        MessageBox("Wylogowano.", Alert.AlertType.INFORMATION);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
         }
     }
     public void RequestOffer(int id)
@@ -169,13 +191,17 @@ public class Client {
         request.Strings.add(nazwisko);// 4
         SendRequest(request);
     }
+    public void SendLogout()
+    {
+        NetData request = new NetData(NetData.Operation.Logout);
+        SendRequest(request);
 
+    }
     public void RequestLogin(String username, String pwd) {
         NetData request = new NetData(NetData.Operation.Login);
         request.Strings.add(username);// 0
         request.Strings.add(MD5Encryptor.encryptPassword(pwd));// 1
         SendRequest(request);
-
     }
 
     public void RequestUsername() {

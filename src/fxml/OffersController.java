@@ -187,6 +187,14 @@ public class OffersController {
 
         return offerNode;
     }
+    @FXML
+    public void LogoutButton()
+    {
+        if (Client.instance != null)
+        {
+            Client.instance.SendLogout();
+        }
+    }
     public void ClickOnItem(int id)
     {
         System.out.println("KLIKNIETO " + id);
