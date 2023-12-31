@@ -10,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -38,6 +39,10 @@ public class OfferDetailsController
     private Text infotext;
     @FXML
     private Button deletebtn;
+    @FXML
+    private HBox buttonsbar;
+    @FXML
+    private AnchorPane anchor;
     private int currentImage;
     private double ImageWidth;
     private double ImageHeight;
