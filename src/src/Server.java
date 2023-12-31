@@ -1,7 +1,5 @@
 package src;
 
-import com.google.gson.Gson;
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -68,6 +66,9 @@ public class Server {
                             case OfferElement:
                                 handleOfferElement(output);
                                 break;
+                            case OfferDetails:
+                                handleOfferDetails(data, output);
+                                break;
                             default:
                                 System.out.println(socket + " requested unknown operation.");
                                 break;
@@ -89,6 +90,61 @@ public class Server {
             if (session != null) {
                 connectedClients.remove(session);
                 session = null;
+            }
+        }
+    }
+
+    private void handleOfferDetails(NetData data, ObjectOutputStream output)
+    {
+        if (data.Integers.size() == 1 && data.Integers.get(0)>0)
+        {
+            DatabaseHandler dbh = new DatabaseHandler();
+            int id = data.Integers.get(0);
+            if (!checkDBConnection(dbh, output)) {
+                return;
+            }
+            String query = "SELECT * FROM `auta` WHERE `id_auta` = " + id +";";
+            ResultSet result = dbh.executeQuery(query);
+            while (true) {
+                try {
+                    if (!result.next()) break;
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.println("SENDING AN OFFER.");
+                NetData response = new NetData(NetData.Operation.OfferDetails);
+                try {
+                    String marka = result.getString("marka");
+                    String model = result.getString("model");
+                    String silnik = result.getString("silnik");
+                    int prod = result.getInt("rok_prod");
+                    float cena = result.getFloat("cenaZaDzien");
+                    String opis = result.getString("opis");
+                    String header = marka + " " + model;
+                    response.Strings.add(header);
+                    String details = "Silnik: " + silnik + "\n" + "Rok produkcji: " + prod + "\nCena za dzień: " + String.format("%.2f zł", cena)+"\n\n"+opis;
+                    response.Strings.add(details);
+                    response.Floats.add(cena);
+                    response.Integers.add(id);
+                    String imagesString = result.getString("wiekszeZdjecia");
+                    if (imagesString != null && !imagesString.isEmpty()) {
+                        String[] images = imagesString.split(";");
+                        for (String image : images) {
+                            byte[] img = loadImageAsBytes(image);
+                            System.out.println("IMG SIZE: " + img.length);
+                            if (img.length > 0)
+                            {
+                                response.Images.add(img);
+                            }
+                        }
+                    }
+                    output.writeObject(response);
+                    output.flush();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
@@ -117,10 +173,8 @@ public class Server {
                     String existsquery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE `login` = \""
                             + data.Strings.get(0) + "\" OR numer_telefonu = " + numtel + ";";
                     DatabaseHandler dbh = new DatabaseHandler();
-                    if (dbh.conn == null || dbh.conn.isClosed()) {
-                        SendError(output, "Blad polaczenia z baza danych.", response);
-                        dbh.close();
-                        return;
+                    if (!checkDBConnection(dbh, output)) {
+                       return;
                     }
                     ResultSet existing = dbh.executeQuery(existsquery);
                     try {
@@ -191,9 +245,7 @@ public class Server {
                 String existsquery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE `login` = \""
                         + data.Strings.get(0) + "\" AND password = \"" + data.Strings.get(1) + "\";";
                 DatabaseHandler dbh = new DatabaseHandler();
-                if (dbh.conn == null || dbh.conn.isClosed()) {
-                    SendError(output, "Blad polaczenia z baza danych.", response);
-                    dbh.close();
+                if (!checkDBConnection(dbh, output)) {
                     return;
                 }
                 ResultSet existing = dbh.executeQuery(existsquery);
@@ -238,12 +290,9 @@ public class Server {
     }
 
     private void handleOfferElement(ObjectOutputStream output) throws IOException, SQLException {
-        String query = "SELECT * FROM `auta` ORDER BY `cenaZaDzien` ASC;";
+        String query = "SELECT `id_auta`,`marka`,`model`,`rok_prod`,`silnik`,`zdjecie`,`opis`,`cenaZaDzien` FROM `auta` ORDER BY `cenaZaDzien` ASC;";
         DatabaseHandler dbh = new DatabaseHandler();
-        if (dbh.conn == null || dbh.conn.isClosed()) {
-            NetData response = new NetData(NetData.Operation.OfferElement);
-            SendError(output, "Błąd połączenia z bazą danych.", response);
-            dbh.close();
+        if (!checkDBConnection(dbh, output)) {
             return;
         }
         ResultSet result = dbh.executeQuery(query);
@@ -275,7 +324,7 @@ public class Server {
 
     private static byte[] loadImageAsBytes(String imagePath) {
         try {
-            URL resourceUrl = Server.class.getResource(imagePath);
+            URL resourceUrl = Server.class.getResource("/img/"+imagePath);
             if (resourceUrl != null) {
                 try (InputStream stream = resourceUrl.openStream()) {
                     return stream.readAllBytes();
@@ -300,7 +349,28 @@ public class Server {
         output.writeObject(data);
         output.flush();
     }
-
+    boolean checkDBConnection(DatabaseHandler dbh, ObjectOutputStream output)
+    {
+        NetData response = new NetData(NetData.Operation.Unspecified);
+        try {
+            if (dbh.conn == null || dbh.conn.isClosed()) {
+                if (output!=null)
+                    SendError(output, "Błąd połączenia z bazą danych.", response);
+                dbh.close();
+                return false;
+            }
+        } catch (SQLException | IOException e) {
+            if (output!=null) {
+                try {
+                    SendError(output, "Błąd połączenia z bazą danych.", response);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+            return false;
+        }
+        return true;
+    }
     void SendMessage(ObjectOutputStream output, String mes, NetData data) throws IOException {
         if (data == null || output == null)
             return;

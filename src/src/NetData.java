@@ -14,6 +14,7 @@ public class NetData implements Serializable {
         OfferUsername,
         Ping,
         Exit,
+        OfferDetails,
     }
 
     public enum OperationType {

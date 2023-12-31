@@ -1,5 +1,6 @@
 package src;
 
+import fxml.OfferDetailsController;
 import fxml.OffersController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
@@ -129,9 +130,34 @@ public class Client {
                 System.out.println(data.Integers.size());
                 System.out.println(data.Images.size());
             }
+        } else if (data.operation == NetData.Operation.OfferDetails) {
+            if (data.Strings.size() == 2 && data.Floats.size() == 1 && data.Integers.size() == 1){
+                System.out.println("ADDING DETAILS");
+                if (OfferDetailsController.instance != null)
+                {
+                    OfferDetailsController.instance.SetHeader(data.Strings.get(0).trim());
+                    OfferDetailsController.instance.SetDetails(data.Strings.get(1).trim());
+                    for (byte[] img : data.Images)
+                    {
+                        OfferDetailsController.instance.AddImage(img);
+                    }
+                    OfferDetailsController.instance.checkImage();
+                }
+            }else{
+                System.out.println("Received Wrong Car Details");
+                System.out.println("Strings: " + data.Strings.size());
+                System.out.println("Floats: " + data.Floats.size());
+                System.out.println("Integers: " + data.Integers.size());
+                System.out.println("Images: " + data.Images.size());
+            }
         }
     }
-
+    public void RequestOffer(int id)
+    {
+        NetData request = new NetData(NetData.Operation.OfferDetails);
+        request.Integers.add(id);
+        SendRequest(request);
+    }
     public void RequestRegister(String username, String pwd, String pwdR, int phone, String imie, String nazwisko)
             throws DisconnectException {
         NetData request = new NetData(NetData.Operation.Register);

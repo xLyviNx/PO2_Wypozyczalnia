@@ -25,7 +25,7 @@
                <children>
                   <Button fx:id="buttonLogowanie1" mnemonicParsing="false" onAction="#handleButtonLogowanieAction" prefHeight="50.0" prefWidth="230.0" styleClass="mainScreenbutton" text="Logowanie" textAlignment="CENTER" textFill="#22334d">
                      <font>
-                        <Font name="Corbel" size="29.0" />
+                        <Font name="Corbel Bold" size="29.0" />
                      </font>
                      <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -36,7 +36,7 @@
                   </Button>
                   <Button fx:id="buttonRejestracja1" mnemonicParsing="false" onAction="#handleButtonRegisterAction" prefHeight="50.0" prefWidth="230.0" styleClass="mainScreenbutton" text="Rejestracja" textAlignment="CENTER" textFill="#22334d">
                      <font>
-                        <Font name="Corbel" size="29.0" />
+                        <Font name="Corbel Bold" size="29.0" />
                      </font>
                      <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

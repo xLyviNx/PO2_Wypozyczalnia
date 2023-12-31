@@ -190,6 +190,7 @@ public class OffersController {
     public void ClickOnItem(int id)
     {
         System.out.println("KLIKNIETO " + id);
+        OfferDetailsController.openScene(id);
     }
     public static class ImageItem {
         private final String description;

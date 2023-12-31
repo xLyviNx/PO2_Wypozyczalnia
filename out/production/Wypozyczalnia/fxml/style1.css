@@ -49,3 +49,6 @@
     -fx-background: rgba(0,0,0,0.2);
     -fx-background-color: rgba(0,0,0,0.1);
 }
+#imgContainer {
+    -fx-overflow: hidden;
+}
