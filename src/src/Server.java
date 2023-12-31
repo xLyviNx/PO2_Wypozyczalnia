@@ -1,6 +1,7 @@
 package src;
 import com.google.gson.Gson;
 import com.mysql.cj.PreparedQuery;
+import fxml.OffersController;
 
 import java.net.*;
 import java.io.*;
@@ -255,9 +256,11 @@ public class Server {
                                     response.Floats.add(cena);
                                     response.Integers.add(id);
                                     String zdjecie = result.getString("zdjecie");
-                                    if (!zdjecie.isEmpty())
-                                        response.Images.add(loadImageAsBytes(zdjecie));
-
+                                    if (!zdjecie.isEmpty()) {
+                                        byte[] img = loadImageAsBytes(zdjecie);
+                                        System.out.println("IMG SIZE: " + img.length);
+                                        response.Images.add(new byte[0]);
+                                    }
                                     output.writeUTF(response.toJSON());
                                     output.flush();
                                 }
@@ -302,20 +305,23 @@ public class Server {
     }
     private static byte[] loadImageAsBytes(String imagePath) {
         try {
-            InputStream stream = Server.class.getResourceAsStream(imagePath);
-            if (stream != null) {
-                return stream.readAllBytes();
+            URL resourceUrl = Server.class.getResource(imagePath);
+            if (resourceUrl != null) {
+                try (InputStream stream = resourceUrl.openStream()) {
+                    return stream.readAllBytes();
+                }
             } else {
                 // Handle the case where the resource is not found
-                System.out.println("Resource not found: " + imagePath);
+                System.out.println("Resource not found: " + resourceUrl);
                 return new byte[0];
             }
         } catch (IOException e) {
             e.printStackTrace();
             // Handle the exception (e.g., log it or return a default image)
-            return new byte[0]; // Return an empty byte array as a placeholder
+            return new byte[0];
         }
     }
+
     void SendError(DataOutputStream output, String error, NetData data) throws IOException {
         if (data == null || output == null)
             return;
