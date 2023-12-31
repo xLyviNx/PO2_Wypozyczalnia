@@ -172,10 +172,31 @@ public class Client {
                     }
                 }
             });
+        } else if (data.operation == NetData.Operation.ReservationRequest)
+        {
+            if (data.operationType == NetData.OperationType.Success)
+            {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        MessageBox("Zarezerwowano pojazd. Oczekuj próby kontaktu naszego agenta na twój numer telefonu.", Alert.AlertType.INFORMATION);
+                        OffersController.openScene();
+                    }
+                });
+
+            }
         }
+    }
+    public void RequestReservation(int id, int days)
+    {
+        NetData req = new NetData(NetData.Operation.ReservationRequest);
+        req.Integers.add(id);
+        req.Integers.add(days);
+        SendRequest(req);
     }
     public void RequestOffer(int id)
     {
+        System.out.println("Requesting OFFER");
         NetData request = new NetData(NetData.Operation.OfferDetails);
         request.Integers.add(id);
         SendRequest(request);

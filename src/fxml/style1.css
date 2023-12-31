@@ -52,3 +52,9 @@
 #imgContainer {
     -fx-overflow: hidden;
 }
+.rezSlider
+{
+}
+.rezSlider .axis .axis-tick-mark, .slider .axis .axis-minor-tick-mark {
+    -fx-stroke: white;
+}

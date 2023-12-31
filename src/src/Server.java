@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class Server {
     final int port = 12345;
@@ -96,6 +95,11 @@ public class Server {
                                 }
                                 break;
                             }
+                            case ReservationRequest:
+                            {
+                                handleReservation(data, session, output);
+                                break;
+                            }
                             default:
                                 System.out.println(socket + " requested unknown operation.");
                                 break;
@@ -120,9 +124,74 @@ public class Server {
             }
         }
     }
-
+    private boolean reservationExists (int id, ObjectOutputStream output, DatabaseHandler dbh) {
+        String query = "SELECT * FROM wypozyczenie " +
+                "WHERE id_wypozyczenia = " + id +
+                " AND (data_wypozyczenia IS NULL OR (data_wypozyczenia IS NOT NULL AND CURRENT_DATE() BETWEEN data_wypozyczenia AND DATE_ADD(data_wypozyczenia, INTERVAL days DAY)))";
+        try{
+            ResultSet resultSet = dbh.executeQuery(query);
+            return resultSet.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            try {
+                if (output!=null)
+                    SendError(output, "Blad bazy danych!", new NetData(NetData.Operation.Unspecified));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            return true;
+        }
+    }
+    private void handleReservation(NetData data, User session, ObjectOutputStream output) {
+        if (session != null && session.isSignedIn) {
+            DatabaseHandler dbh = new DatabaseHandler();
+            if (!checkDBConnection(dbh, output)) {
+                return;
+            }
+            if (!reservationExists(data.Integers.get(0), output, dbh)) {
+                System.out.println("Rezerwacja nie istnieje");
+                String query = "INSERT INTO wypozyczenie (`uzytkownicy_id_uzytkownika`, `auta_id_auta`, `days`)\n" +
+                        "SELECT id_uzytkownika, " + data.Integers.get(0) + ", " + data.Integers.get(1) + " FROM uzytkownicy\n" +
+                        "WHERE login = '" + session.username + "';";
+                int res = dbh.executeUpdate(query);
+                if (res<=0)
+                {
+                    try {
+                        SendError(output, "Nie udalo sie zarezerwowac pojazdu. Sprobuj ponownie pozniej.", new NetData(NetData.Operation.ReservationRequest));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    dbh.close();
+                }
+                else {
+                    NetData response = new NetData(NetData.Operation.ReservationRequest);
+                    response.operationType = NetData.OperationType.Success;
+                    dbh.close();
+                    try {
+                        output.writeObject(response);
+                        output.flush();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+                }
+            } else {
+                try {
+                    SendError(output, "Rezerwacja istnieje, albo wystapil blad polaczenia z baza danych.", new NetData(NetData.Operation.ReservationRequest));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } else {
+            NetData err = new NetData(NetData.Operation.Unspecified);
+            err.operationType = NetData.OperationType.Error;
+            err.Strings.add("Nie jestes zalogowany/a!");
+        }
+    }
     private void handleOfferDetails(NetData data, ObjectOutputStream output)
     {
+        System.out.println(data.Integers.size());
+        System.out.println(data.Integers.get(0));
         if (data.Integers.size() == 1 && data.Integers.get(0)>0)
         {
             DatabaseHandler dbh = new DatabaseHandler();
@@ -317,7 +386,13 @@ public class Server {
     }
 
     private void handleOfferElement(ObjectOutputStream output)  {
-        String query = "SELECT `id_auta`,`marka`,`model`,`rok_prod`,`silnik`,`zdjecie`,`opis`,`cenaZaDzien` FROM `auta` ORDER BY `cenaZaDzien` ASC;";
+        String query = "SELECT a.`id_auta`, a.`marka`, a.`model`, a.`rok_prod`, a.`silnik`, a.`zdjecie`, a.`opis`, a.`cenaZaDzien` " +
+                "FROM `auta` a " +
+                "LEFT JOIN `wypozyczenie` w ON a.`id_auta` = w.`auta_id_auta` " +
+                "WHERE w.`id_wypozyczenia` IS NULL " +
+                "   OR (w.`data_wypozyczenia` IS NOT NULL " +
+                "       AND NOT (CURRENT_DATE() BETWEEN w.`data_wypozyczenia` AND DATE_ADD(w.`data_wypozyczenia`, INTERVAL w.`days` DAY))) " +
+                "ORDER BY a.`cenaZaDzien` ASC;";
         DatabaseHandler dbh = new DatabaseHandler();
         if (!checkDBConnection(dbh, output)) {
             return;
@@ -327,6 +402,7 @@ public class Server {
             while (result.next()) {
                 NetData response = new NetData(NetData.Operation.OfferElement);
                 int id = result.getInt("id_auta");
+
                 String marka = result.getString("marka");
                 String model = result.getString("model");
                 String silnik = result.getString("silnik");

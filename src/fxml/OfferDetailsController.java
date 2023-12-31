@@ -49,6 +49,7 @@ public class OfferDetailsController
     private double ImageRatio;
     private HBox imageParent;
     ArrayList<Image> images = new ArrayList<>();
+    int carid;
     public static OfferDetailsController openScene(int id) {
         try {
             URL path = OffersController.class.getResource("/fxml/offerDetails.fxml");
@@ -105,7 +106,7 @@ public class OfferDetailsController
         {
             Client.instance.RequestOffer(id);
         }
-
+        carid = id;
         photoprev.addEventFilter(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
@@ -230,6 +231,6 @@ public class OfferDetailsController
 
     public void rezerwuj(MouseEvent mouseEvent)
     {
-
+        ReservationController.openScene(carname.getText(), carid);
     }
 }
