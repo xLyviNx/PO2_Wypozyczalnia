@@ -1,6 +1,7 @@
 package src;
 
 import java.io.*;
+import java.sql.Date;
 import java.util.ArrayList;
 
 public class NetData implements Serializable {
@@ -21,6 +22,8 @@ public class NetData implements Serializable {
         addButton,
         AddOffer,
         DeleteOffer,
+        RequestConfirmtations,
+        ReservationElement,
     }
 
     public enum OperationType {
@@ -37,6 +40,7 @@ public class NetData implements Serializable {
     public ArrayList<Float> Floats = new ArrayList<>();
     public ArrayList<Boolean> Booleans = new ArrayList<>();
     public ArrayList<byte[]> Images = new ArrayList<>();
+    public ArrayList<Date> Dates = new ArrayList<>();
 
     public NetData(Operation op, String str) {
         operation = op;

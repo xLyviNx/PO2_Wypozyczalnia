@@ -34,9 +34,7 @@ public class OffersController {
     @FXML
     public Button addOfferButton;
     @FXML
-    public void initialize() {
-
-    }
+    public Button confirmationsButton;
     public void StartScene()
     {
         if (Client.instance != null)
@@ -179,6 +177,11 @@ public class OffersController {
     {
         flow.getChildren().clear();
         StartScene();
+    }
+    @FXML
+    public void GoToConfirmations()
+    {
+        confirmationController.OpenScene();
     }
 }
 

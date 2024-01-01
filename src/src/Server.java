@@ -10,6 +10,7 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -121,6 +122,19 @@ public class Server {
                                 handleDeleteOffer(data,session,output);
                                 break;
                             }
+                            case RequestConfirmtations:
+                            {
+                                try {
+                                    handleSendConfirmations(data, session, output);
+                                } catch (IOException e) {
+                                    SendError(output, "Błąd IO.\n" + e.getLocalizedMessage(), new NetData(NetData.Operation.Unspecified));
+                                    throw new RuntimeException(e);
+                                } catch (SQLException e) {
+                                    SendError(output, "Błąd Bazy Danych.", new NetData(NetData.Operation.Unspecified));
+                                    throw new RuntimeException(e);
+                                }
+                                break;
+                            }
                             default:
                                 System.out.println(socket + " requested unknown operation.");
                                 break;
@@ -143,6 +157,75 @@ public class Server {
                 connectedClients.remove(session);
                 session = null;
             }
+        }
+    }
+
+    private void handleSendConfirmations(NetData data, User session, ObjectOutputStream output) throws IOException, SQLException {
+        NetData err = new NetData(NetData.Operation.Unspecified);
+        if (!session.isSignedIn || session.username.isEmpty()) {
+            SendError(output, "Nie jesteś zalogowany/a!", err);
+            return;
+        }
+        if (!session.canManageReservations) {
+            SendError(output, "Nie masz uprawnień do usuwania ofert!", err);
+            return;
+        }
+        DatabaseHandler dbh = new DatabaseHandler();
+        if (!checkDBConnection(dbh, output))
+        {
+            return;
+        }
+        String query = "SELECT\n" +
+                "    wyp.id_wypozyczenia,\n" +
+                "    wyp.days,\n" +
+                "    car.marka,\n" +
+                "    car.model,\n" +
+                "    car.rok_prod,\n" +
+                "    car.id_auta,\n" +
+                "    car.cenaZaDzien,\n" +
+                "    uzy.login,\n" +
+                "    uzy.imie,\n" +
+                "    uzy.nazwisko,\n" +
+                "    uzy.numer_telefonu\n" +
+                "FROM\n" +
+                "    wypozyczenie wyp\n" +
+                "INNER JOIN\n" +
+                "    auta car ON wyp.auta_id_auta = car.id_auta\n" +
+                "INNER JOIN\n" +
+                "    uzytkownicy uzy ON wyp.uzytkownicy_id_uzytkownika = uzy.id_uzytkownika\n" +
+                "WHERE\n" +
+                "    wyp.data_wypozyczenia IS NULL;";
+
+        ResultSet results = dbh.executeQuery(query);
+        while (results != null && results.next())
+        {
+            NetData reservation = new NetData(NetData.Operation.ReservationElement);
+            int reserveId = results.getInt("id_wypozyczenia");
+            int reserveDays = results.getInt("days");
+            String marka = results.getString("marka");
+            String model = results.getString("model");
+            int rokProd = results.getInt("rok_prod");
+            int idAuta = results.getInt("id_auta");
+            float cenaZaDzien = results.getFloat("cenaZaDzien");
+            String login = results.getString("login");
+            String imie = results.getString("imie");
+            String nazwisko = results.getString("nazwisko");
+            int numerTelefonu = results.getInt("numer_telefonu");
+
+            reservation.Integers.add(reserveId);
+            reservation.Integers.add(reserveDays);
+            reservation.Strings.add(marka);
+            reservation.Strings.add(model);
+            reservation.Integers.add(rokProd);
+            reservation.Integers.add(idAuta);
+            reservation.Floats.add(cenaZaDzien);
+            reservation.Strings.add(login);
+            reservation.Strings.add(imie);
+            reservation.Strings.add(nazwisko);
+            reservation.Integers.add(numerTelefonu);
+
+            output.writeObject(reservation);
+            output.flush();
         }
     }
 
@@ -422,7 +505,7 @@ public class Server {
             DatabaseHandler dbh = new DatabaseHandler();
             if (!checkDBConnection(dbh, null))
                 return;
-            String query = "SELECT typ.`dodajogloszenia`,typ.`wypozyczauto`,typ.`usunogloszenie` FROM typy_uzytkownikow typ INNER JOIN uzytkownicy uz ON typ.id_typu = uz.typy_uzytkownikow_id_typu WHERE uz.login = '" + session.username + "';";
+            String query = "SELECT typ.`dodajogloszenia`,typ.`wypozyczauto`,typ.`usunogloszenie`, typ.`manageReservations` FROM typy_uzytkownikow typ INNER JOIN uzytkownicy uz ON typ.id_typu = uz.typy_uzytkownikow_id_typu WHERE uz.login = '" + session.username + "';";
             ResultSet rsS = dbh.executeQuery(query);
             try {
                 while (rsS.next())
@@ -430,6 +513,7 @@ public class Server {
                     session.canReserve = rsS.getBoolean("wypozyczauto");
                     session.canAddOffers = rsS.getBoolean("dodajogloszenia");
                     session.canDeleteOffers = rsS.getBoolean("usunogloszenie");
+                    session.canManageReservations = rsS.getBoolean("manageReservations");
                     break;
                 }
             } catch (SQLException e) {
@@ -530,7 +614,7 @@ public class Server {
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
-                System.out.println("SENDING AN OFFER.");
+                //System.out.println("SENDING AN OFFER.");
                 NetData response = new NetData(NetData.Operation.OfferDetails);
                 try {
                     String marka = result.getString("marka");
@@ -836,4 +920,5 @@ class User implements Serializable {
     boolean canAddOffers = false;
     boolean canDeleteOffers = false;
     boolean canReserve = false;
+    boolean canManageReservations = false;
 }

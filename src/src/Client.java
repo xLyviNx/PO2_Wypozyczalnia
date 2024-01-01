@@ -289,6 +289,28 @@ public class Client {
             });
 
         }
+        else if (data.operation == NetData.Operation.ReservationElement)
+        {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    if (data.Strings.size()==5 && data.Floats.size()==1 && data.Integers.size()==5)
+                    {
+                        if (confirmationController.instance != null)
+                        {
+                            String text = "(" + data.Integers.get(0) + ") " + data.Strings.get(3) + " " + data.Strings.get(4) + " (" + data.Strings.get(2) + ", " + data.Integers.get(4) + ")\n";
+                            text += data.Strings.get(0) + " " + data.Strings.get(1) + " (" + data.Integers.get(2) + ", ID: " + data.Integers.get(3) + "), CZAS: " + data.Integers.get(1) + " dni.";
+                            confirmationController.instance.AddButton(text, data.Integers.get(0));
+                        }
+                    }
+                }
+            });
+        }
+    }
+    public void RequestConfirmations()
+    {
+        NetData req = new NetData(NetData.Operation.RequestConfirmtations);
+        SendRequest(req);
     }
     public void RequestDelete(int id)
     {
