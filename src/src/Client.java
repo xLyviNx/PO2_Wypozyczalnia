@@ -1,16 +1,15 @@
 package src;
 
-import fxml.OfferDetailsController;
-import fxml.OffersController;
-import fxml.ReservationController;
-import fxml.StartPageController;
+import fxml.*;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
+import javafx.scene.layout.HBox;
 
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class Client {
@@ -97,6 +96,41 @@ public class Client {
         System.out.println("DC");
     }
 
+    public void RequestAddOffer(String brand, String model, int year, String engine, float price, String desc, byte[] thumbnail, String thumbnailname, ArrayList<byte[]> images, String imagesnames)
+    {
+        if (brand.length()>32)
+        {
+            MessageBox("Marka nie może być dłuższa niż 32 znaki.", Alert.AlertType.ERROR);
+            return;
+        }
+        if (model.length()>32)
+        {
+            MessageBox("Model nie może być dłuższy niż 32 znaki.", Alert.AlertType.ERROR);
+            return;
+        }
+        if (engine.length()>32)
+        {
+            MessageBox("Silnik nie może być dłuższy niż 32 znaki.", Alert.AlertType.ERROR);
+            return;
+        }
+        if (engine.length()>32)
+        {
+            MessageBox("Silnik nie może być dłuższy niż 32 znaki.", Alert.AlertType.ERROR);
+            return;
+        }
+        NetData data = new NetData(NetData.Operation.AddOffer);
+        data.Strings.add(brand);
+        data.Strings.add(model);
+        data.Integers.add(year);
+        data.Strings.add(engine);
+        data.Floats.add(price);
+        data.Strings.add(desc);
+        data.Strings.add(thumbnailname);
+        data.Strings.add(imagesnames);
+        data.Images.add(thumbnail);
+        data.Images.addAll(images);
+        SendRequest(data);
+    }
     private void handleReceivedData(NetData data) throws IOException {
         System.out.println("RECEIVED DATA");
         if (data.operationType == NetData.OperationType.Error) {
@@ -110,7 +144,8 @@ public class Client {
                 });
             }
             MessageBox(data.Strings.get(0), Alert.AlertType.ERROR);
-        } else if (data.operationType == NetData.OperationType.MessageBox) {
+        }
+        if (data.operationType == NetData.OperationType.MessageBox) {
             MessageBox(data.Strings.get(0), Alert.AlertType.INFORMATION);
         } else if (data.operation == NetData.Operation.Register) {
             if (data.operationType == NetData.OperationType.Success) {
@@ -133,7 +168,7 @@ public class Client {
         } else if (data.operation == NetData.Operation.OfferElement) {
             if (data.Strings.size() == 1 && data.Floats.size() == 1 && data.Integers.size() == 1
                     && (data.Images.size() == 1 || data.Images.isEmpty())) {
-                System.out.println("ADDING CAR");
+                //System.out.println("ADDING CAR");
                 try {
                     byte[] imgs = data.Images.size() >0? data.Images.get(0) : new byte[0];
                     OffersController.AddOfferNode(data.Strings.get(0).trim(), data.Floats.get(0), imgs,
@@ -141,33 +176,42 @@ public class Client {
                 }catch(Exception ex)
                 {
                     ex.printStackTrace();
-                    System.out.println("ERROR ADDING");
+                    System.err.println("ERROR ADDING CAR");
                 }
-            } else {
-                System.out.println(data.Strings.size());
-                System.out.println(data.Floats.size());
-                System.out.println(data.Integers.size());
-                System.out.println(data.Images.size());
             }
         } else if (data.operation == NetData.Operation.OfferDetails) {
             if (data.Strings.size() == 2 && data.Floats.size() == 1 && data.Integers.size() == 1){
-                System.out.println("ADDING DETAILS");
+                //System.out.println("ADDING DETAILS");
                 if (OfferDetailsController.instance != null)
                 {
                     OfferDetailsController.instance.SetHeader(data.Strings.get(0).trim());
                     OfferDetailsController.instance.SetDetails(data.Strings.get(1).trim());
+                    OfferDetailsController.instance.price = data.Floats.get(0);
+                    //OfferDetailsController.instance.deletebtn.setVisible(!data.Booleans.isEmpty() && data.Booleans.get(0));
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (data.Booleans.isEmpty() || !data.Booleans.get(0))
+                            {
+                                try {
+                                    HBox btnpar = (HBox) OfferDetailsController.instance.deletebtn.getParent();
+                                    btnpar.getChildren().remove(OfferDetailsController.instance.deletebtn);
+                                }catch(Exception ex)
+                                {
+                                    ex.printStackTrace();
+                                }
+                            }else{
+                                OfferDetailsController.instance.deletebtn.setVisible(true);
+                            }
+                        }
+                    });
+
                     for (byte[] img : data.Images)
                     {
                         OfferDetailsController.instance.AddImage(img);
                     }
                     OfferDetailsController.instance.checkImage();
                 }
-            }else{
-                System.out.println("Received Wrong Car Details");
-                System.out.println("Strings: " + data.Strings.size());
-                System.out.println("Floats: " + data.Floats.size());
-                System.out.println("Integers: " + data.Integers.size());
-                System.out.println("Images: " + data.Images.size());
             }
         } else if (data.operation == NetData.Operation.Logout) {
             Platform.runLater(new Runnable() {
@@ -210,6 +254,47 @@ public class Client {
                 });
             }
         }
+        else if (data.operation == NetData.Operation.AddOffer)
+        {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    if (data.operationType == NetData.OperationType.Success)
+                    {
+                        MessageBox("Dodano oferte.", Alert.AlertType.INFORMATION);
+                        OffersController.openScene();
+                    }
+                    else if (data.operationType== NetData.OperationType.Error)
+                    {
+                        if (addOfferController.instance!=null)
+                        {
+                            addOfferController.instance.but_confirm.setVisible(true);
+                        }
+                    }
+                }
+            });
+
+        }
+        else if (data.operation == NetData.Operation.DeleteOffer)
+        {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    if (data.operationType == NetData.OperationType.Success)
+                    {
+                        MessageBox("Usunięto ofertę.", Alert.AlertType.INFORMATION);
+                        OffersController.openScene();
+                    }
+                }
+            });
+
+        }
+    }
+    public void RequestDelete(int id)
+    {
+        NetData req = new NetData(NetData.Operation.DeleteOffer);
+        req.Integers.add(id);
+        SendRequest(req);
     }
     public void RequestReservation(int id, int days)
     {

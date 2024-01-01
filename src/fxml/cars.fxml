@@ -30,7 +30,7 @@
                   </Label>
                   <HBox alignment="TOP_RIGHT" spacing="5.0">
                      <children>
-                        <Button fx:id="addOfferButton" mnemonicParsing="false" onMouseClicked="#LogoutButton" prefHeight="31.0" prefWidth="169.0" styleClass="mainScreenbutton" text="Dodaj Oferte" textAlignment="CENTER" textFill="#243461" visible="false">
+                        <Button fx:id="addOfferButton" mnemonicParsing="false" onMouseClicked="#AddOfferButton" prefHeight="31.0" prefWidth="169.0" styleClass="mainScreenbutton" text="Dodaj Oferte" textAlignment="CENTER" textFill="#243461" visible="false">
                            <padding>
                               <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
                            </padding>
@@ -38,7 +38,15 @@
                               <Font size="16.0" />
                            </font>
                         </Button>
-                        <Button fx:id="logOutButton1" layoutX="1154.0" layoutY="10.0" mnemonicParsing="false" onMouseClicked="#LogoutButton" prefHeight="25.0" prefWidth="126.0" styleClass="mainScreenbutton" text="Wyloguj" textAlignment="CENTER" textFill="#243461">
+                        <Button layoutX="1154.0" layoutY="10.0" mnemonicParsing="false" onMouseClicked="#Refresh" prefHeight="25.0" prefWidth="126.0" styleClass="mainScreenbutton" text="Odśwież" textAlignment="CENTER" textFill="#243461">
+                           <padding>
+                              <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
+                           </padding>
+                           <font>
+                              <Font size="16.0" />
+                           </font>
+                        </Button>
+                        <Button fx:id="logOutButton11" layoutX="1154.0" layoutY="10.0" mnemonicParsing="false" onMouseClicked="#LogoutButton" prefHeight="25.0" prefWidth="126.0" styleClass="mainScreenbutton" text="Wyloguj" textAlignment="CENTER" textFill="#243461">
                            <padding>
                               <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
                            </padding>

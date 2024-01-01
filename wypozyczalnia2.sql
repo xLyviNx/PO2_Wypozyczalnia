@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 31, 2023 at 11:56 PM
+-- Generation Time: Sty 01, 2024 at 08:04 PM
 -- Wersja serwera: 10.4.32-MariaDB
 -- Wersja PHP: 8.0.30
 
@@ -33,19 +33,11 @@ CREATE TABLE `auta` (
   `model` varchar(32) NOT NULL,
   `rok_prod` int(11) NOT NULL,
   `silnik` varchar(32) NOT NULL,
-  `zdjecie` varchar(32) DEFAULT NULL,
-  `opis` varchar(256) DEFAULT NULL,
+  `zdjecie` varchar(64) DEFAULT NULL,
+  `opis` varchar(512) DEFAULT NULL,
   `cenaZaDzien` decimal(10,2) DEFAULT NULL,
   `wiekszeZdjecia` varchar(256) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `auta`
---
-
-INSERT INTO `auta` (`id_auta`, `marka`, `model`, `rok_prod`, `silnik`, `zdjecie`, `opis`, `cenaZaDzien`, `wiekszeZdjecia`) VALUES
-(1, 'Alfa Romeo', 'GT', 2004, '1.9 JTD', 'cars/alfa_gt.jpg', 'Coupe Alfy, niestety bez lawety w gratisie.', 80.00, 'cars/alfagt1.jpg;cars/alfagt2.jpg'),
-(3, 'Audi', 'A6 C6', 2007, '3.0 TDI Quattro', 'cars/audia6c6.jpg', 'Automat, 4 zera są a ty będziesz 5 za kierownicą, wypożycz już teraz!', 110.00, 'cars/audia6c6_1.jpg;cars/audia6c6_2.jpg');
 
 -- --------------------------------------------------------
 
@@ -86,13 +78,6 @@ CREATE TABLE `uzytkownicy` (
   `typy_uzytkownikow_id_typu` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `uzytkownicy`
---
-
-INSERT INTO `uzytkownicy` (`id_uzytkownika`, `login`, `password`, `imie`, `nazwisko`, `data_utworzenia`, `numer_telefonu`, `typy_uzytkownikow_id_typu`) VALUES
-(10, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'System', 'Admin', '2023-12-30 19:41:20', 100000000, 1);
-
 -- --------------------------------------------------------
 
 --
@@ -106,13 +91,6 @@ CREATE TABLE `wypozyczenie` (
   `auta_id_auta` int(11) NOT NULL,
   `days` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `wypozyczenie`
---
-
-INSERT INTO `wypozyczenie` (`id_wypozyczenia`, `data_wypozyczenia`, `uzytkownicy_id_uzytkownika`, `auta_id_auta`, `days`) VALUES
-(1, NULL, 10, 1, 13);
 
 --
 -- Indeksy dla zrzutów tabel
@@ -153,7 +131,7 @@ ALTER TABLE `wypozyczenie`
 -- AUTO_INCREMENT for table `auta`
 --
 ALTER TABLE `auta`
-  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `typy_uzytkownikow`
@@ -165,13 +143,13 @@ ALTER TABLE `typy_uzytkownikow`
 -- AUTO_INCREMENT for table `uzytkownicy`
 --
 ALTER TABLE `uzytkownicy`
-  MODIFY `id_uzytkownika` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id_uzytkownika` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `wypozyczenie`
 --
 ALTER TABLE `wypozyczenie`
-  MODIFY `id_wypozyczenia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_wypozyczenia` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables

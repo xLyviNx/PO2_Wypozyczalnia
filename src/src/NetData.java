@@ -19,6 +19,8 @@ public class NetData implements Serializable {
         ReservationRequest,
         removeButton,
         addButton,
+        AddOffer,
+        DeleteOffer,
     }
 
     public enum OperationType {

@@ -29,8 +29,9 @@ public class ReservationController {
     private Slider slider_dni;
     @FXML
     public Button but_reserve;
+    float price;
 
-    public static ReservationController openScene(String header, int id) {
+    public static ReservationController openScene(String header, int id, float price) {
         try {
             URL path = OffersController.class.getResource("/fxml/rezerwacja.fxml");
             if (path == null) {
@@ -53,7 +54,7 @@ public class ReservationController {
             instance = loader.getController();
             System.out.println(instance);
             instance.scene = scene;
-            instance.StartScene(header, id);
+            instance.StartScene(header, id, price);
             return instance;
         } catch (IOException e) {
             System.err.println("Error loading FXML file: " + e.getMessage());
@@ -68,15 +69,16 @@ public class ReservationController {
         return null;
     }
 
-    public void StartScene(String header, int id)
+    public void StartScene(String header, int id, float price)
     {
         carid = id;
+        this.price=price;
         dniText.setText("Wybierz na ile dni chcesz wypozyczyc pojazd.");
         headertext.setText(header);
         slider_dni.valueProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                dniText.setText("Pojazd zostanie wypozyczony na " + newValue.intValue() + " dni.");
+                dniText.setText("Pojazd zostanie wypozyczony na " + newValue.intValue() + " dni.\nSpodziewany koszt wynajmu: " + String.format("%.2f zł", price * newValue.intValue()));
             }
         });
     }

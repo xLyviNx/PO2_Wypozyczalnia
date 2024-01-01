@@ -38,7 +38,7 @@ public class OfferDetailsController
     @FXML
     private Text infotext;
     @FXML
-    private Button deletebtn;
+    public Button deletebtn;
     @FXML
     private HBox buttonsbar;
     @FXML
@@ -49,6 +49,7 @@ public class OfferDetailsController
     private double ImageRatio;
     private HBox imageParent;
     ArrayList<Image> images = new ArrayList<>();
+    public float price;
     int carid;
     public static OfferDetailsController openScene(int id) {
         try {
@@ -226,11 +227,14 @@ public class OfferDetailsController
 
     public void Usun(MouseEvent mouseEvent)
     {
-
+        if (Client.instance != null)
+        {
+            Client.instance.RequestDelete(carid);
+        }
     }
 
     public void rezerwuj(MouseEvent mouseEvent)
     {
-        ReservationController.openScene(carname.getText(), carid);
+        ReservationController.openScene(carname.getText(), carid, price);
     }
 }

@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
@@ -63,23 +64,27 @@
                               </HBox>
                            </children>
                         </VBox>
-                        <VBox layoutX="10.0" layoutY="10.0" prefHeight="600.0" prefWidth="751.0" styleClass="offerButtonBar" HBox.hgrow="ALWAYS">
+                        <VBox alignment="TOP_RIGHT" layoutX="10.0" layoutY="10.0" prefHeight="600.0" prefWidth="751.0" styleClass="offerButtonBar" HBox.hgrow="ALWAYS">
                            <children>
-                              <TextFlow prefHeight="200.0" prefWidth="200.0" textAlignment="RIGHT" VBox.vgrow="ALWAYS">
-                                 <children>
-                                    <Text fx:id="infotext" fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="RIGHT">
-                                       <font>
-                                          <Font size="30.0" />
-                                       </font>
-                                    </Text>
-                                 </children>
+                              <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: transparent;" styleClass="offerDetScroll" vbarPolicy="ALWAYS" VBox.vgrow="ALWAYS">
                                  <VBox.margin>
                                     <Insets />
                                  </VBox.margin>
-                                 <padding>
-                                    <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
-                                 </padding>
-                              </TextFlow>
+                                 <content>
+                                    <TextFlow prefHeight="599.0" prefWidth="760.0" textAlignment="RIGHT">
+                                       <children>
+                                          <Text fx:id="infotext" fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="RIGHT">
+                                             <font>
+                                                <Font size="30.0" />
+                                             </font>
+                                          </Text>
+                                       </children>
+                                       <padding>
+                                          <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+                                       </padding>
+                                    </TextFlow>
+                                 </content>
+                              </ScrollPane>
                            </children>
                         </VBox>
                      </children>
@@ -89,7 +94,7 @@
                <children>
                   <HBox alignment="CENTER" depthTest="ENABLE" spacing="15.0" styleClass="offerButtonBar" VBox.vgrow="ALWAYS">
                      <children>
-                        <Button fx:id="deletebtn" layoutX="421.0" layoutY="25.0" mnemonicParsing="false" onMouseClicked="#Usun" prefHeight="60.0" prefWidth="222.0" styleClass="mainScreenbutton" text="Usuń" textFill="#22334d">
+                        <Button fx:id="deletebtn" layoutX="421.0" layoutY="25.0" mnemonicParsing="false" onMouseClicked="#Usun" prefHeight="60.0" prefWidth="222.0" styleClass="mainScreenbutton" text="Usuń" textFill="#22334d" visible="false">
                            <font>
                               <Font name="System Bold" size="23.0" />
                            </font>

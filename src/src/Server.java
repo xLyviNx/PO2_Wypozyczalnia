@@ -1,11 +1,16 @@
 package src;
 
+import jdk.jshell.execution.Util;
+
+import javax.imageio.ImageIO;
 import javax.xml.transform.Result;
+import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.URL;
+import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -73,7 +78,7 @@ public class Server {
                                 handleOfferElement(output,session);
                                 break;
                             case OfferDetails:
-                                handleOfferDetails(data, output);
+                                handleOfferDetails(data, session, output);
                                 break;
                             case Logout:
                             {
@@ -101,6 +106,21 @@ public class Server {
                                 handleReservation(data, session, output);
                                 break;
                             }
+                            case AddOffer:
+                            {
+                                try {
+                                    handleAddOffer(data, session, output);
+                                }catch(Exception ex)
+                                {
+                                    ex.printStackTrace();
+                                }
+                                break;
+                            }
+                            case DeleteOffer:
+                            {
+                                handleDeleteOffer(data,session,output);
+                                break;
+                            }
                             default:
                                 System.out.println(socket + " requested unknown operation.");
                                 break;
@@ -125,6 +145,276 @@ public class Server {
             }
         }
     }
+
+    private void handleDeleteOffer(NetData data, User session, ObjectOutputStream output) throws IOException {
+        NetData res = new NetData(NetData.Operation.DeleteOffer);
+        if (!session.isSignedIn || session.username.isEmpty()) {
+            SendError(output, "Nie jesteś zalogowany/a!", res);
+            return;
+        }
+        if (!session.canDeleteOffers) {
+            SendError(output, "Nie masz uprawnień do usuwania ofert!", res);
+            return;
+        }
+
+        if (data.Integers.size() == 1) {
+            int offerIdToDelete = data.Integers.get(0);
+
+            try {
+                DatabaseHandler dbh = new DatabaseHandler();
+                if (!checkDBConnection(dbh, output)) {
+                    return;
+                }
+
+                // Pobierz informacje o zdjęciach i miniaturkach związanych z ofertą
+                String query = "SELECT zdjecie, wiekszeZdjecia FROM auta WHERE id_auta = ?";
+                try (PreparedStatement selectStatement = dbh.conn.prepareStatement(query)) {
+                    selectStatement.setInt(1, offerIdToDelete);
+                    ResultSet resultSet = selectStatement.executeQuery();
+
+                    if (resultSet.next()) {
+                        String thumbnail = resultSet.getString("zdjecie");
+                        String[] photosIndividual = resultSet.getString("wiekszeZdjecia").split(";");
+
+                        // Usuń ofertę z bazy danych
+                        query = "DELETE FROM auta WHERE id_auta = ?";
+                        try (PreparedStatement deleteStatement = dbh.conn.prepareStatement(query)) {
+                            deleteStatement.setInt(1, offerIdToDelete);
+                            int rowsDeleted = deleteStatement.executeUpdate();
+
+                            if (rowsDeleted > 0) {
+
+                                ClassLoader classLoader = Server.class.getClassLoader();
+                                URL resourceUrl = classLoader.getResource("");
+                                String classpath = new File(resourceUrl.getFile()).getPath();
+                                String folderPath = classpath + File.separator + "img";
+
+                                if (!thumbnail.isEmpty() && resourceUrl != null) {
+                                    String thumbnailPath = folderPath + File.separator + thumbnail;
+                                    Path thumbnailFilePath = Paths.get(thumbnailPath);
+                                    try {
+                                        Files.delete(thumbnailFilePath);
+                                        System.out.println("Thumbnail deleted successfully.");
+                                    } catch (IOException e) {
+                                        // Handle the exception if the file deletion fails
+                                        System.err.println("Unable to delete the thumbnail: " + e.getMessage());
+                                    }
+                                }
+
+                                for (String photo : photosIndividual) {
+                                    if (!photo.isEmpty() && resourceUrl != null) {
+                                        String photoPath = folderPath + File.separator + photo;
+                                        Path photoFilePath = Paths.get(photoPath);
+                                        try {
+                                            Files.delete(photoFilePath);
+                                            System.out.println("Photo deleted successfully.");
+                                        } catch (IOException e) {
+                                            // Handle the exception if the file deletion fails
+                                            System.err.println("Unable to delete the photo: " + e.getMessage());
+                                        }
+                                    }
+                                }
+                                // Wyslij potwierdzenie sukcesu
+                                NetData successRes = new NetData(NetData.Operation.DeleteOffer);
+                                successRes.operationType = NetData.OperationType.Success;
+                                output.writeObject(successRes);
+                                output.flush();
+                                return;
+                            }
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            // Jeśli kod dochodzi do tego miejsca, to usuwanie oferty nie powiodło się
+            SendError(output, "Nie można usunąć tej oferty lub oferta nie istnieje!", res);
+        } else {
+            SendError(output, "Nieprawidłowe dane przesłane do usuwania oferty!", res);
+        }
+    }
+
+
+    private void handleAddOffer(NetData data, User session, ObjectOutputStream output) throws IOException {
+        NetData res = new NetData(NetData.Operation.AddOffer);
+        if (!session.isSignedIn || session.username.isEmpty())
+        {
+            SendError(output, "Nie jesteś zalogowany/a!", res);
+            return;
+        }
+        if (!session.canAddOffers)
+        {
+            SendError(output, "Nie masz uprawnień do dodawania nowych ofert!", res);
+            return;
+        }
+        if (data.Strings.size() == 6)
+        {
+            if (data.Integers.size()==1 && data.Floats.size() == 1)
+            {
+                String thumbname = "user/" + session.username + "/" + data.Strings.get(4);
+                if (thumbname.length()>64)
+                {
+                    SendError(output, "Przekroczono maksymalna dlugosc znakow w miniaturce, sprobuj skrocic nazwe pliku!", res);
+                    return;
+                }
+                URL thumburl = Server.class.getResource("/img/"+thumbname);
+                //System.err.println("URL: " + thumburl);
+                if (Utilities.fileExists(thumburl))
+                {
+                    SendError(output, "Plik miniaturki o danej nazwie już istnieje!", res);
+                    return;
+                }
+                String dbPhotos = "";
+                String[] photosIndividual = null;
+
+                if (data.Strings.get(5) != null) {
+                    photosIndividual = data.Strings.get(5).split(";");
+                    for (String photo : photosIndividual) {
+                        String photoname = "user/" + session.username + "/" + photo;
+                        URL resourceUrl = Server.class.getResource("/img/" + photoname);
+                        if (Utilities.fileExists(resourceUrl)) {
+                            SendError(output, "Conajmniej jeden z przesłanych plików już istnieje!", res);
+                            return;
+                        }
+                        dbPhotos += photoname + ";";
+                    }
+
+                    dbPhotos = dbPhotos.trim();
+                    if (dbPhotos.endsWith(";")) {
+                        dbPhotos = dbPhotos.substring(0, dbPhotos.length() - 1);
+                    }
+                    if (dbPhotos.length() > 256) {
+                        SendError(output, "Przekroczono maksymalna dlugosc znakow w zdjeciach, sprobuj skrocic nazwy!", res);
+                        return;
+                    }
+                }
+                DatabaseHandler dbh = new DatabaseHandler();
+                if (!checkDBConnection(dbh, output))
+                {
+                    return;
+                }
+                String query = "INSERT INTO auta (marka, model, rok_prod, silnik, zdjecie, opis, cenaZaDzien, wiekszeZdjecia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+                try (PreparedStatement preparedStatement = dbh.conn.prepareStatement(query)) {
+                    preparedStatement.setString(1, data.Strings.get(0).trim());
+                    preparedStatement.setString(2, data.Strings.get(1).trim());
+                    preparedStatement.setInt(3, data.Integers.get(0));
+                    preparedStatement.setString(4, data.Strings.get(2).trim());
+                    preparedStatement.setString(5, thumbname);
+                    preparedStatement.setString(6, data.Strings.get(3).trim());
+                    preparedStatement.setFloat(7, data.Floats.get(0));
+                    preparedStatement.setString(8, dbPhotos);
+                    int queryres = preparedStatement.executeUpdate();
+                    if (queryres>0)
+                    {
+                        if (!data.Images.isEmpty()) {
+                            byte[] thumb = data.Images.get(0);
+                            data.Images.remove(0);
+                            if (thumb.length > 0)
+                            {
+                                try {
+                                    BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(thumb));
+
+                                    ClassLoader classLoader = Server.class.getClassLoader();
+                                    URL resourceUrl = classLoader.getResource("");
+                                    if (resourceUrl != null) {
+                                        String classpath = new File(resourceUrl.getFile()).getPath(); // Poprawka dla obsługi ścieżki bez "file:"
+                                        String folderPath = classpath + File.separator + "img" + File.separator + "user/" + session.username;
+                                        //System.err.println("PATH: " + folderPath);
+                                        Path folder = Paths.get(folderPath);
+                                        if (!Files.exists(folder)) {
+                                            // Katalog nie istnieje, więc próbujemy go utworzyć
+                                            try {
+                                                Files.createDirectories(folder);
+                                                System.out.println("Katalog został utworzony pomyślnie.");
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                                System.err.println("Błąd podczas tworzenia katalogu.");
+                                            }
+                                        }
+                                        String imgPath = folderPath + File.separator + data.Strings.get(4).trim();
+
+                                        try {
+                                            ImageIO.write(bufferedImage, "jpg", new File(imgPath));
+                                            System.out.println("Obraz został zapisany pomyślnie.");
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                            System.err.println("Błąd podczas zapisywania obrazu.");
+                                        }
+                                    } else {
+                                        System.err.println("Nie można uzyskać ścieżki do katalogu classpath.");
+                                    }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            if (photosIndividual!=null && data.Images.size() == photosIndividual.length) {
+                                for (int i = 0; i < photosIndividual.length; i++) {
+                                    String photoname = "user/" + session.username + "/" + photosIndividual[i];
+                                    byte[] img = data.Images.get(i);
+                                    if (img.length > 0) {
+                                        try {
+                                            BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(img));
+
+                                            ClassLoader classLoader = Server.class.getClassLoader();
+                                            URL resourceUrl = classLoader.getResource("");
+                                            if (resourceUrl != null) {
+                                                String classpath = new File(resourceUrl.getFile()).getPath();
+                                                String folderPath = classpath + File.separator + "img" + File.separator + "user/" + session.username;
+                                                Path folder = Paths.get(folderPath);
+                                                if (!Files.exists(folder)) {
+                                                    try {
+                                                        Files.createDirectories(folder);
+                                                        System.out.println("Katalog został utworzony pomyślnie.");
+                                                    } catch (IOException e) {
+                                                        e.printStackTrace();
+                                                        System.err.println("Błąd podczas tworzenia katalogu.");
+                                                    }
+                                                }
+
+                                                String imgPath = folderPath + File.separator + photosIndividual[i];
+
+                                                ImageIO.write(bufferedImage, "jpg", new File(imgPath));
+                                                System.out.println("Obraz został zapisany pomyślnie.");
+                                            } else {
+                                                System.err.println("Nie można uzyskać ścieżki do katalogu classpath.");
+                                                SendError(output, "Nie można uzyskać ścieżki do katalogu classpath przez serwer.", res);
+                                            }
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                            System.err.println("Błąd podczas zapisywania obrazu.");
+                                            SendError(output, "Błąd podczas zapisywania obrazu przez serwer.", res);
+                                        }
+                                    }
+                                }
+                            } else {
+                                System.out.println("Rozmiar zdjęć nieprawidłowy");
+                            }
+                        }
+                        NetData newRes = new NetData(NetData.Operation.AddOffer);
+                        newRes.operationType= NetData.OperationType.Success;
+                        output.writeObject(newRes);
+                        output.flush();
+                    }
+                    else
+                    {
+                        SendError(output,"Wystapil problem z dodawaniem ogloszenia.", res);
+                    }
+                } catch (SQLException e) {
+                    try {
+                        SendError(output,"Wystapil problem polaczenia z baza danych.", res);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
+
     private void fetchUserPermissions(User session)
     {
         if (session.isSignedIn)
@@ -221,7 +511,7 @@ public class Server {
             err.Strings.add("Nie jestes zalogowany/a!");
         }
     }
-    private void handleOfferDetails(NetData data, ObjectOutputStream output)
+    private void handleOfferDetails(NetData data, User session, ObjectOutputStream output)
     {
         System.out.println(data.Integers.size());
         System.out.println(data.Integers.get(0));
@@ -255,12 +545,13 @@ public class Server {
                     response.Strings.add(details);
                     response.Floats.add(cena);
                     response.Integers.add(id);
+                    response.Booleans.add(session.isSignedIn && !session.username.isEmpty() && session.canDeleteOffers);
                     String imagesString = result.getString("wiekszeZdjecia");
                     if (imagesString != null && !imagesString.isEmpty()) {
                         String[] images = imagesString.split(";");
                         for (String image : images) {
-                            byte[] img = loadImageAsBytes(image);
-                            System.out.println("IMG SIZE: " + img.length);
+                            byte[] img = Utilities.loadImageAsBytes(image, false);
+                            //System.out.println("IMG SIZE: " + img.length);
                             if (img.length > 0)
                             {
                                 response.Images.add(img);
@@ -459,8 +750,8 @@ public class Server {
                 try {
                     String zdjecie = result.getString("zdjecie");
                     if (zdjecie != null && !zdjecie.isEmpty()) {
-                        byte[] img = loadImageAsBytes(zdjecie);
-                        System.out.println("IMG SIZE: " + img.length);
+                        byte[] img = Utilities.loadImageAsBytes(zdjecie, false);
+                        //System.out.println("IMG SIZE: " + img.length);
                         response.Images.add(img);
                     }
                 }
@@ -470,7 +761,7 @@ public class Server {
                 }
                 output.writeObject(response);
                 output.flush();
-                System.out.println("SENDING AN OFFER.");
+                //System.out.println("SENDING AN OFFER.");
                 /*try {
                     TimeUnit.MILLISECONDS.sleep(1000);
                 } catch (InterruptedException e) {
@@ -488,24 +779,7 @@ public class Server {
     }
 
 
-    private static byte[] loadImageAsBytes(String imagePath) {
-        try {
-            URL resourceUrl = Server.class.getResource("/img/"+imagePath);
-            if (resourceUrl != null) {
-                try (InputStream stream = resourceUrl.openStream()) {
-                    return stream.readAllBytes();
-                }
-            } else {
-                // Handle the case where the resource is not found
-                System.out.println("Resource not found: " + resourceUrl);
-                return new byte[0];
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            // Handle the exception (e.g., log it or return a default image)
-            return new byte[0];
-        }
-    }
+
 
     private void SendError(ObjectOutputStream output, String error, NetData data) throws IOException {
         if (data == null || output == null)

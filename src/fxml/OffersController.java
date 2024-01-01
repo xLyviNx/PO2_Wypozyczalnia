@@ -35,31 +35,6 @@ public class OffersController {
     public Button addOfferButton;
     @FXML
     public void initialize() {
-    /*list.getItems().add(new ImageItem("tank",new Image("./src/Tank jednostka.png")));
-        System.out.println("lista");
-
-        list.setCellFactory(param -> new ListCell<ImageItem>() {
-            private final ImageView imageView = new ImageView();
-
-            {
-                imageView.setFitWidth(100);
-                imageView.setFitHeight(100);
-            }
-
-            @Override
-            protected void updateItem(ImageItem item, boolean empty) {
-                super.updateItem(item, empty);
-
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
-                    imageView.setImage(item.getImage());
-                    setGraphic(imageView);
-                    setText(item.getDescription());
-                }
-            }
-        });
-     */
 
     }
     public void StartScene()
@@ -69,7 +44,6 @@ public class OffersController {
             Client.instance.RequestUsername();
             Client.instance.RequestOffers();
         }
-        System.out.println("instance or usernameText IS: " + instance + ", " + instance.label_user);
     }
     public static OffersController openScene() {
         try {
@@ -122,19 +96,11 @@ public class OffersController {
         }
         return null;
     }
-
-    @FXML
-    public void loadScene(Parent root) {
-
-    }
     public static void AddOfferNode(String vehicleName, float price, byte[] imageBytes, int dbid) {
-            System.out.println("B1");
             if (instance != null && WypozyczalniaOkno.instance != null && instance.scene == WypozyczalniaOkno.getPrimaryStage().getScene()) {
-                System.out.println("B2");
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
-                        System.out.println("B3");
                         instance.flow.getChildren().add(instance.createOfferNode(vehicleName, price, imageBytes, dbid));
                     }
                 });
@@ -203,22 +169,16 @@ public class OffersController {
         System.out.println("KLIKNIETO " + id);
         OfferDetailsController.openScene(id);
     }
-    public static class ImageItem {
-        private final String description;
-        private final Image image;
-
-        public ImageItem(String description, Image image) {
-            this.description = description;
-            this.image = image;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public Image getImage() {
-            return image;
-        }
+    @FXML
+    public void AddOfferButton()
+    {
+        addOfferController.openScene();
+    }
+    @FXML
+    public void Refresh()
+    {
+        flow.getChildren().clear();
+        StartScene();
     }
 }
 
