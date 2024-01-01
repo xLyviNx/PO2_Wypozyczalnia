@@ -2,6 +2,7 @@ package src;
 
 import fxml.OfferDetailsController;
 import fxml.OffersController;
+import fxml.ReservationController;
 import fxml.StartPageController;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
@@ -99,6 +100,15 @@ public class Client {
     private void handleReceivedData(NetData data) throws IOException {
         System.out.println("RECEIVED DATA");
         if (data.operationType == NetData.OperationType.Error) {
+            if (data.operation == NetData.Operation.ReservationRequest && ReservationController.instance != null)
+            {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        ReservationController.instance.but_reserve.setVisible(true);
+                    }
+                });
+            }
             MessageBox(data.Strings.get(0), Alert.AlertType.ERROR);
         } else if (data.operationType == NetData.OperationType.MessageBox) {
             MessageBox(data.Strings.get(0), Alert.AlertType.INFORMATION);
@@ -183,7 +193,21 @@ public class Client {
                         OffersController.openScene();
                     }
                 });
-
+            }
+        }
+        else if (data.operation == NetData.Operation.addButton)
+        {
+            if (data.Booleans.size()==1)
+            {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (OffersController.instance != null)
+                        {
+                            OffersController.instance.addOfferButton.setVisible(data.Booleans.get(0));
+                        }
+                    }
+                });
             }
         }
     }

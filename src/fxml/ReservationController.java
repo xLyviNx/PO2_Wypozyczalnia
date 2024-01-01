@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.net.URL;
 
 public class ReservationController {
-    private static ReservationController instance;
+    public static ReservationController instance;
     public Scene scene;
     public int carid;
     @FXML
@@ -28,7 +28,7 @@ public class ReservationController {
     @FXML
     private Slider slider_dni;
     @FXML
-    private Button but_reserve;
+    public Button but_reserve;
 
     public static ReservationController openScene(String header, int id) {
         try {

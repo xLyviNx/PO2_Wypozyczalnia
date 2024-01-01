@@ -3,6 +3,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -30,6 +31,8 @@ public class OffersController {
     public static OffersController instance;
     @FXML
     public Label label_user;
+    @FXML
+    public Button addOfferButton;
     @FXML
     public void initialize() {
     /*list.getItems().add(new ImageItem("tank",new Image("./src/Tank jednostka.png")));

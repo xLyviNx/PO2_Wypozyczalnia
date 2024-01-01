@@ -1,5 +1,6 @@
 package src;
 
+import javax.xml.transform.Result;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -69,7 +70,7 @@ public class Server {
                                 handleOfferUsername(output, session);
                                 break;
                             case OfferElement:
-                                handleOfferElement(output);
+                                handleOfferElement(output,session);
                                 break;
                             case OfferDetails:
                                 handleOfferDetails(data, output);
@@ -124,6 +125,29 @@ public class Server {
             }
         }
     }
+    private void fetchUserPermissions(User session)
+    {
+        if (session.isSignedIn)
+        {
+            DatabaseHandler dbh = new DatabaseHandler();
+            if (!checkDBConnection(dbh, null))
+                return;
+            String query = "SELECT typ.`dodajogloszenia`,typ.`wypozyczauto`,typ.`usunogloszenie` FROM typy_uzytkownikow typ INNER JOIN uzytkownicy uz ON typ.id_typu = uz.typy_uzytkownikow_id_typu WHERE uz.login = '" + session.username + "';";
+            ResultSet rsS = dbh.executeQuery(query);
+            try {
+                while (rsS.next())
+                {
+                    session.canReserve = rsS.getBoolean("wypozyczauto");
+                    session.canAddOffers = rsS.getBoolean("dodajogloszenia");
+                    session.canDeleteOffers = rsS.getBoolean("usunogloszenie");
+                    break;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+        }
+    }
     private boolean reservationExists (int id, ObjectOutputStream output, DatabaseHandler dbh) {
         String query = "SELECT * FROM wypozyczenie " +
                 "WHERE id_wypozyczenia = " + id +
@@ -144,6 +168,15 @@ public class Server {
     }
     private void handleReservation(NetData data, User session, ObjectOutputStream output) {
         if (session != null && session.isSignedIn) {
+            if (!session.canReserve)
+            {
+                try {
+                    SendError(output, "Nie masz uprawnień do rezerwacji.", new NetData(NetData.Operation.ReservationRequest));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                return;
+            }
             DatabaseHandler dbh = new DatabaseHandler();
             if (!checkDBConnection(dbh, output)) {
                 return;
@@ -291,6 +324,7 @@ public class Server {
                                 output.flush();
                                 session.isSignedIn = true;
                                 session.username = data.Strings.get(0);
+                                fetchUserPermissions(session);
                                 dbh.close();
                                 return;
                             } else {
@@ -349,6 +383,7 @@ public class Server {
                     if (!existing.isClosed() && existing.next()) {
                         session.isSignedIn = true;
                         session.username = data.Strings.get(0);
+                        fetchUserPermissions(session);
                         response.operationType = NetData.OperationType.Success;
                         output.writeObject(response);
                         output.flush();
@@ -385,7 +420,7 @@ public class Server {
         output.flush();
     }
 
-    private void handleOfferElement(ObjectOutputStream output)  {
+    private void handleOfferElement(ObjectOutputStream output, User session)  {
         String query = "SELECT a.`id_auta`, a.`marka`, a.`model`, a.`rok_prod`, a.`silnik`, a.`zdjecie`, a.`opis`, a.`cenaZaDzien` " +
                 "FROM `auta` a " +
                 "LEFT JOIN `wypozyczenie` w ON a.`id_auta` = w.`auta_id_auta` " +
@@ -393,6 +428,15 @@ public class Server {
                 "   OR (w.`data_wypozyczenia` IS NOT NULL " +
                 "       AND NOT (CURRENT_DATE() BETWEEN w.`data_wypozyczenia` AND DATE_ADD(w.`data_wypozyczenia`, INTERVAL w.`days` DAY))) " +
                 "ORDER BY a.`cenaZaDzien` ASC;";
+        try {
+            NetData addBr = new NetData(NetData.Operation.addButton);
+            addBr.Booleans.add(session.canAddOffers);
+            output.writeObject(addBr);
+            output.flush();
+        } catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
         DatabaseHandler dbh = new DatabaseHandler();
         if (!checkDBConnection(dbh, output)) {
             return;
@@ -515,4 +559,7 @@ class User implements Serializable {
     public boolean isSignedIn;
     public String username;
     public transient Socket clientSocket;
+    boolean canAddOffers = false;
+    boolean canDeleteOffers = false;
+    boolean canReserve = false;
 }
