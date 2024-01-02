@@ -1,5 +1,6 @@
 package src;
 
+import com.sun.javafx.scene.shape.MeshHelper;
 import fxml.*;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
@@ -306,6 +307,33 @@ public class Client {
                 }
             });
         }
+        else if ((data.operation == NetData.Operation.CancelReservation || data.operation == NetData.Operation.ConfirmReservation) && data.operationType == NetData.OperationType.Success)
+        {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    if (confirmationController.instance!=null)
+                    {
+                        confirmationController.instance.Refresh();
+                        String oper = data.operation == NetData.Operation.CancelReservation ? "anulowano" : "potwierdzono";
+                        MessageBox("Pomyślnie " + oper + " rezerwację.", Alert.AlertType.INFORMATION);
+                    }
+                }
+            });
+        }
+
+    }
+    public void RequestCancelReservation(int id)
+    {
+        NetData req = new NetData(NetData.Operation.CancelReservation);
+        req.Integers.add(id);
+        SendRequest(req);
+    }
+    public void RequestConfirmReservation(int id)
+    {
+        NetData req = new NetData(NetData.Operation.ConfirmReservation);
+        req.Integers.add(id);
+        SendRequest(req);
     }
     public void RequestConfirmations()
     {

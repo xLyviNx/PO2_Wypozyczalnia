@@ -133,11 +133,18 @@ public class confirmationController
     // Example handler methods
     private void handleDelete(int id) {
         System.out.println("Delete clicked for ID: " + id);
-
+        if (Client.instance!=null)
+        {
+            Client.instance.RequestCancelReservation(id);
+        }
     }
 
     private void handleConfirm(int id) {
         System.out.println("Confirm clicked for ID: " + id);
+        if (Client.instance!=null)
+        {
+            Client.instance.RequestConfirmReservation(id);
+        }
     }
     public void Refresh(){
         container.getChildren().clear();

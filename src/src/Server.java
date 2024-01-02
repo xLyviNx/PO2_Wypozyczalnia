@@ -135,6 +135,24 @@ public class Server {
                                 }
                                 break;
                             }
+                            case CancelReservation:
+                            {
+                                handleCancelReservation(data,session,output);
+                                break;
+                            }
+                            case ConfirmReservation:
+                            {
+                                try {
+                                    handleConfirmReservation(data,session,output);
+                                } catch (IOException e) {
+                                    SendError(output, "Błąd IO.\n" + e.getLocalizedMessage(), new NetData(NetData.Operation.Unspecified));
+                                    throw new RuntimeException(e);
+                                } catch (SQLException e) {
+                                    SendError(output, "Błąd Bazy Danych.", new NetData(NetData.Operation.Unspecified));
+                                    throw new RuntimeException(e);
+                                }
+                                break;
+                            }
                             default:
                                 System.out.println(socket + " requested unknown operation.");
                                 break;
@@ -157,6 +175,76 @@ public class Server {
                 connectedClients.remove(session);
                 session = null;
             }
+        }
+    }
+
+    private void handleConfirmReservation(NetData data, User session, ObjectOutputStream output) throws IOException, SQLException {
+        NetData err = new NetData(NetData.Operation.Unspecified);
+        if (!session.isSignedIn || session.username.isEmpty()) {
+            SendError(output, "Nie jesteś zalogowany/a!", err);
+            return;
+        }
+        if (!session.canManageReservations) {
+            SendError(output, "Nie masz uprawnień do usuwania ofert!", err);
+            return;
+        }
+        if (data.Integers.size()==1) {
+            DatabaseHandler dbh = new DatabaseHandler();
+            if (!checkDBConnection(dbh, output)) {
+                return;
+            }
+            int id = data.Integers.get(0);
+            String query = "UPDATE wypozyczenie SET data_wypozyczenia = NOW() WHERE id_wypozyczenia = ?";
+            PreparedStatement preparedStatement = dbh.conn.prepareStatement(query);
+            preparedStatement.setInt(1, id);
+            int updated = preparedStatement.executeUpdate();
+            if (updated > 0) {
+                NetData response = new NetData(NetData.Operation.ConfirmReservation);
+                response.operationType = NetData.OperationType.Success;
+                output.writeObject(response);
+                output.flush();
+            } else {
+                SendError(output, "Błąd potwierdzania rezerwacji!", err);
+            }
+        }
+        else{
+            SendError(output, "Błąd przetwarzania żądania!", err);
+        }
+    }
+
+    private void handleCancelReservation(NetData data, User session, ObjectOutputStream output) throws IOException {
+        NetData err = new NetData(NetData.Operation.Unspecified);
+        if (!session.isSignedIn || session.username.isEmpty()) {
+            SendError(output, "Nie jesteś zalogowany/a!", err);
+            return;
+        }
+        if (!session.canManageReservations) {
+            SendError(output, "Nie masz uprawnień do usuwania ofert!", err);
+            return;
+        }
+        if (data.Integers.size()==1)
+        {
+            DatabaseHandler dbh = new DatabaseHandler();
+            if (!checkDBConnection(dbh, output))
+            {
+                return;
+            }
+            int id = data.Integers.get(0);
+            String query = "DELETE FROM wypozyczenie WHERE id_wypozyczenia = " + id;
+            int res = dbh.executeUpdate(query);
+            if (res>0)
+            {
+                NetData response = new NetData(NetData.Operation.CancelReservation);
+                response.operationType= NetData.OperationType.Success;
+                output.writeObject(response);
+                output.flush();
+            }
+            else{
+                SendError(output, "Błąd usuwania rezerwacji!", err);
+            }
+        }
+        else{
+            SendError(output, "Błąd przetwarzania żądania!", err);
         }
     }
 
@@ -525,7 +613,7 @@ public class Server {
     private boolean reservationExists (int id, ObjectOutputStream output, DatabaseHandler dbh) {
         String query = "SELECT * FROM wypozyczenie " +
                 "WHERE id_wypozyczenia = " + id +
-                " AND (data_wypozyczenia IS NULL OR (data_wypozyczenia IS NOT NULL AND CURRENT_DATE() BETWEEN data_wypozyczenia AND DATE_ADD(data_wypozyczenia, INTERVAL days DAY)))";
+                " AND (data_wypozyczenia IS NULL OR (data_wypozyczenia IS NOT NULL AND NOW() BETWEEN data_wypozyczenia AND DATE_ADD(data_wypozyczenia, INTERVAL days DAY)))";
         try{
             ResultSet resultSet = dbh.executeQuery(query);
             return resultSet.next();
@@ -801,7 +889,7 @@ public class Server {
                 "LEFT JOIN `wypozyczenie` w ON a.`id_auta` = w.`auta_id_auta` " +
                 "WHERE w.`id_wypozyczenia` IS NULL " +
                 "   OR (w.`data_wypozyczenia` IS NOT NULL " +
-                "       AND NOT (CURRENT_DATE() BETWEEN w.`data_wypozyczenia` AND DATE_ADD(w.`data_wypozyczenia`, INTERVAL w.`days` DAY))) " +
+                "       AND NOT (NOW() BETWEEN w.`data_wypozyczenia` AND DATE_ADD(w.`data_wypozyczenia`, INTERVAL w.`days` DAY))) " +
                 "ORDER BY a.`cenaZaDzien` ASC;";
         try {
             NetData addBr = new NetData(NetData.Operation.addButton);
