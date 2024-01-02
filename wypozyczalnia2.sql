@@ -165,7 +165,7 @@ ALTER TABLE `uzytkownicy`
 -- AUTO_INCREMENT for table `wypozyczenie`
 --
 ALTER TABLE `wypozyczenie`
-  MODIFY `id_wypozyczenia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_wypozyczenia` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables

@@ -300,7 +300,7 @@ public class Client {
                         if (confirmationController.instance != null)
                         {
                             String text = "(" + data.Integers.get(0) + ") " + data.Strings.get(3) + " " + data.Strings.get(4) + " (" + data.Strings.get(2) + ", " + data.Integers.get(4) + ")\n";
-                            text += data.Strings.get(0) + " " + data.Strings.get(1) + " (" + data.Integers.get(2) + ", ID: " + data.Integers.get(3) + "), CZAS: " + data.Integers.get(1) + " dni.";
+                            text += data.Strings.get(0) + " " + data.Strings.get(1) + " (" + data.Integers.get(2) + ", ID: " + data.Integers.get(3) + "), CZAS: " + data.Integers.get(1) + " dni, KOSZT: " + String.format("%.2f zł", data.Integers.get(1) * data.Floats.get(0)) + ".";
                             confirmationController.instance.AddButton(text, data.Integers.get(0));
                         }
                     }
