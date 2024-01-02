@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sty 02, 2024 at 02:12 PM
+-- Generation Time: Sty 02, 2024 at 06:24 PM
 -- Wersja serwera: 10.4.32-MariaDB
 -- Wersja PHP: 8.0.30
 
@@ -38,14 +38,6 @@ CREATE TABLE `auta` (
   `cenaZaDzien` decimal(10,2) DEFAULT NULL,
   `wiekszeZdjecia` varchar(256) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `auta`
---
-
-INSERT INTO `auta` (`id_auta`, `marka`, `model`, `rok_prod`, `silnik`, `zdjecie`, `opis`, `cenaZaDzien`, `wiekszeZdjecia`) VALUES
-(1, 'Alfa Romeo', 'GT', 2004, '1.9 JTD', 'user/admin/alfa_gt.jpg', 'Alfa Romeo GT, Coupe Alfy Romeo w Dieslu.\nBez lawety w gratisie.', 40.00, 'user/admin/alfagt2.jpg;user/admin/alfagt_rear.jpg;'),
-(2, 'Audi', 'A6 C6', 2007, '3.0 TDI', 'user/admin/audia6c6.jpg', 'Automatyczna skrzynia biegów\nQuattro', 90.00, 'user/admin/audia6c6_1.jpg');
 
 -- --------------------------------------------------------
 
@@ -92,7 +84,9 @@ CREATE TABLE `uzytkownicy` (
 --
 
 INSERT INTO `uzytkownicy` (`id_uzytkownika`, `login`, `password`, `imie`, `nazwisko`, `data_utworzenia`, `numer_telefonu`, `typy_uzytkownikow_id_typu`) VALUES
-(1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'System', 'Administrator', '2024-01-01 20:09:15', 100000000, 2);
+(1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'System', 'Administrator', '2024-01-01 20:09:15', 100000000, 2),
+(2, 'test1', '5a105e8b9d40e1329780d62ea2265d8a', 'TEST', 'KONTO', '2024-01-02 15:11:35', 110000000, 1),
+(3, 'test2', 'ad0234829205b9033196ba818f7a872b', 'TEST', 'KONTO 2', '2024-01-02 16:16:03', 391239193, 1);
 
 -- --------------------------------------------------------
 
@@ -147,7 +141,7 @@ ALTER TABLE `wypozyczenie`
 -- AUTO_INCREMENT for table `auta`
 --
 ALTER TABLE `auta`
-  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `typy_uzytkownikow`
@@ -159,7 +153,7 @@ ALTER TABLE `typy_uzytkownikow`
 -- AUTO_INCREMENT for table `uzytkownicy`
 --
 ALTER TABLE `uzytkownicy`
-  MODIFY `id_uzytkownika` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_uzytkownika` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `wypozyczenie`

@@ -411,14 +411,9 @@ public class Server {
                             int rowsDeleted = deleteStatement.executeUpdate();
 
                             if (rowsDeleted > 0) {
-
-                                ClassLoader classLoader = Server.class.getClassLoader();
-                                URL resourceUrl = classLoader.getResource("");
-                                String classpath = new File(resourceUrl.getFile()).getPath();
-                                String folderPath = classpath + File.separator + "img";
-
-                                if (!thumbnail.isEmpty() && resourceUrl != null) {
-                                    String thumbnailPath = folderPath + File.separator + thumbnail;
+                                String folderPath = Main.imagePath;
+                                if (!thumbnail.isEmpty()) {
+                                    String thumbnailPath = folderPath + thumbnail;
                                     Path thumbnailFilePath = Paths.get(thumbnailPath);
                                     try {
                                         Files.delete(thumbnailFilePath);
@@ -430,8 +425,9 @@ public class Server {
                                 }
 
                                 for (String photo : photosIndividual) {
-                                    if (!photo.isEmpty() && resourceUrl != null) {
-                                        String photoPath = folderPath + File.separator + photo;
+                                    if (!photo.isEmpty()) {
+
+                                        String photoPath = folderPath + photo;
                                         Path photoFilePath = Paths.get(photoPath);
                                         try {
                                             Files.delete(photoFilePath);
@@ -542,12 +538,7 @@ public class Server {
                                 try {
                                     BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(thumb));
 
-                                    ClassLoader classLoader = Server.class.getClassLoader();
-                                    URL resourceUrl = classLoader.getResource("");
-                                    if (resourceUrl != null) {
-                                        String classpath = new File(resourceUrl.getFile()).getPath(); // Poprawka dla obsługi ścieżki bez "file:"
-                                        String folderPath = classpath + File.separator + "img" + File.separator + "user/" + session.username;
-                                        //System.err.println("PATH: " + folderPath);
+                                    String folderPath = Main.imagePath + File.separator + "user/" + session.username;
                                         Path folder = Paths.get(folderPath);
                                         if (!Files.exists(folder)) {
                                             // Katalog nie istnieje, więc próbujemy go utworzyć
@@ -568,9 +559,7 @@ public class Server {
                                             e.printStackTrace();
                                             System.err.println("Błąd podczas zapisywania obrazu.");
                                         }
-                                    } else {
-                                        System.err.println("Nie można uzyskać ścieżki do katalogu classpath.");
-                                    }
+
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
@@ -583,31 +572,23 @@ public class Server {
                                     if (img.length > 0) {
                                         try {
                                             BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(img));
+                                            String folderPath = Main.imagePath + File.separator + "user/" + session.username;
 
-                                            ClassLoader classLoader = Server.class.getClassLoader();
-                                            URL resourceUrl = classLoader.getResource("");
-                                            if (resourceUrl != null) {
-                                                String classpath = new File(resourceUrl.getFile()).getPath();
-                                                String folderPath = classpath + File.separator + "img" + File.separator + "user/" + session.username;
-                                                Path folder = Paths.get(folderPath);
-                                                if (!Files.exists(folder)) {
-                                                    try {
-                                                        Files.createDirectories(folder);
-                                                        System.out.println("Katalog został utworzony pomyślnie.");
-                                                    } catch (IOException e) {
-                                                        e.printStackTrace();
-                                                        System.err.println("Błąd podczas tworzenia katalogu.");
-                                                    }
+                                            Path folder = Paths.get(folderPath);
+                                            if (!Files.exists(folder)) {
+                                                try {
+                                                    Files.createDirectories(folder);
+                                                    System.out.println("Katalog został utworzony pomyślnie.");
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                    System.err.println("Błąd podczas tworzenia katalogu.");
                                                 }
-
-                                                String imgPath = folderPath + File.separator + photosIndividual[i];
-
-                                                ImageIO.write(bufferedImage, "jpg", new File(imgPath));
-                                                System.out.println("Obraz został zapisany pomyślnie.");
-                                            } else {
-                                                System.err.println("Nie można uzyskać ścieżki do katalogu classpath.");
-                                                SendError(output, "Nie można uzyskać ścieżki do katalogu classpath przez serwer.", res);
                                             }
+
+                                            String imgPath = folderPath + File.separator + photosIndividual[i];
+
+                                            ImageIO.write(bufferedImage, "jpg", new File(imgPath));
+                                            System.out.println("Obraz został zapisany pomyślnie.");
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                             System.err.println("Błąd podczas zapisywania obrazu.");

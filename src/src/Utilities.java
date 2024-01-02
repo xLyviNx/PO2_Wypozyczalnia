@@ -10,13 +10,13 @@ public class Utilities
     public static byte[] loadImageAsBytes(String imagePath, boolean isAbsolute) {
         try {
 
-            URL resourceUrl = Server.class.getResource("/img/"+imagePath);
+            File f;
             if (isAbsolute)
-            {
-                File f = new File(imagePath);
-                resourceUrl = new URL(f.toURI().toString());
-                System.out.println("Absolute URL " + resourceUrl.toString());
-            }
+               f = new File(imagePath);
+            else
+                f=new File(Main.imagePath + imagePath);
+            URL resourceUrl = new URL(f.toURI().toString());
+            System.out.println("Absolute URL " + resourceUrl.toString());
             if (resourceUrl != null) {
                 try (InputStream stream = resourceUrl.openStream()) {
                     return stream.readAllBytes();

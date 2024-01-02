@@ -21,10 +21,6 @@ public class WypozyczalniaOkno extends Application {
         return primaryStage;
     }
 
-    public static void main(String[] args) {
-        launch(args);
-    }
-
     @Override
     public void start(Stage primaryStage) throws Exception {
         WypozyczalniaOkno.primaryStage = primaryStage;
@@ -51,7 +47,6 @@ public class WypozyczalniaOkno extends Application {
                 System.exit(0);
             }
         });
-        instance = this;
     }
 
     public void MainScene()
