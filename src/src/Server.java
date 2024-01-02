@@ -153,6 +153,11 @@ public class Server {
                                 }
                                 break;
                             }
+                            case ConfirmationsButton:
+                            {
+                                handleConfirmButton(data,session,output);
+                                break;
+                            }
                             default:
                                 System.out.println(socket + " requested unknown operation.");
                                 break;
@@ -175,6 +180,21 @@ public class Server {
                 connectedClients.remove(session);
                 session = null;
             }
+        }
+    }
+
+    private void handleConfirmButton(NetData data, User session, ObjectOutputStream output) {
+        NetData res = new NetData(NetData.Operation.ConfirmationsButton);
+        if (session.isSignedIn && !session.username.isEmpty() && session.canManageReservations) {
+            res.Booleans.add(true);
+        } else {
+            res.Booleans.add(false);
+        }
+        try {
+            output.writeObject(res);
+            output.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

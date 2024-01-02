@@ -133,196 +133,241 @@ public class Client {
     }
     private void handleReceivedData(NetData data) throws IOException {
         System.out.println("RECEIVED DATA");
+
         if (data.operationType == NetData.OperationType.Error) {
-            if (data.operation == NetData.Operation.ReservationRequest && ReservationController.instance != null)
-            {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        ReservationController.instance.but_reserve.setVisible(true);
-                    }
-                });
-            }
-            MessageBox(data.Strings.get(0), Alert.AlertType.ERROR);
+            handleErrorResponse(data);
+        } else if (data.operationType == NetData.OperationType.MessageBox) {
+            handleMessageBoxResponse(data);
+        } else {
+            handleOtherResponses(data);
         }
-        if (data.operationType == NetData.OperationType.MessageBox) {
-            MessageBox(data.Strings.get(0), Alert.AlertType.INFORMATION);
-        } else if (data.operation == NetData.Operation.Register) {
-            if (data.operationType == NetData.OperationType.Success) {
-                MessageBox("Zarejestrowano.", Alert.AlertType.INFORMATION);
+    }
+
+    private void handleErrorResponse(NetData data) {
+        if (data.operation == NetData.Operation.ReservationRequest && ReservationController.instance != null) {
+            Platform.runLater(() -> ReservationController.instance.but_reserve.setVisible(true));
+        }
+        MessageBox(data.Strings.get(0), Alert.AlertType.ERROR);
+    }
+
+    private void handleMessageBoxResponse(NetData data) {
+        MessageBox(data.Strings.get(0), Alert.AlertType.INFORMATION);
+    }
+
+    private void handleOtherResponses(NetData data) {
+        switch (data.operation) {
+            case NetData.Operation.Register:
+                handleRegisterResponse(data);
+                break;
+            case NetData.Operation.Login:
+                handleLoginResponse(data);
+                break;
+            case NetData.Operation.OfferUsername:
+                handleOfferUsernameResponse(data);
+                break;
+            case NetData.Operation.OfferElement:
+                handleOfferElementResponse(data);
+                break;
+            case NetData.Operation.OfferDetails:
+                handleOfferDetailsResponse(data);
+                break;
+            case NetData.Operation.Logout:
+                handleLogoutResponse(data);
+                break;
+            case NetData.Operation.ReservationRequest:
+                handleReservationRequestResponse(data);
+                break;
+            case NetData.Operation.addButton:
+                handleAddButtonResponse(data);
+                break;
+            case NetData.Operation.AddOffer:
+                handleAddOfferResponse(data);
+                break;
+            case NetData.Operation.DeleteOffer:
+                handleDeleteOfferResponse(data);
+                break;
+            case NetData.Operation.ReservationElement:
+                handleReservationElementResponse(data);
+                break;
+            case NetData.Operation.ConfirmReservation:
+                handleConfirmReservationResponse(data);
+                break;
+            case NetData.Operation.CancelReservation:
+                handleCancelReservationResponse(data);
+                break;
+            case NetData.Operation.ConfirmationsButton:
+                handleConfirmButton(data);
+                break;
+            default:
+                // Handle unrecognized operation
+                break;
+        }
+    }
+
+    private void handleConfirmButton(NetData data)
+    {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                if (OffersController.instance!=null) {
+                    HBox hbx = (HBox) OffersController.instance.confirmationsButton.getParent();
+                    if (!data.Booleans.isEmpty()) {
+                        OffersController.instance.confirmationsButton.setVisible(data.Booleans.get(0));
+                    }
+                }
+            }
+        });
+    }
+
+    public void RequestConfButton()
+    {
+        NetData req = new NetData(NetData.Operation.ConfirmationsButton);
+        SendRequest(req);
+    }
+    private void handleConfirmReservationResponse(NetData data) {
+        Platform.runLater(() -> {
+            if (confirmationController.instance != null) {
+                confirmationController.instance.Refresh();
+                MessageBox("Pomyślnie potwierdzono rezerwację.", Alert.AlertType.INFORMATION);
+            }
+        });
+    }
+
+    private void handleCancelReservationResponse(NetData data) {
+        Platform.runLater(() -> {
+            if (confirmationController.instance != null) {
+                confirmationController.instance.Refresh();
+                MessageBox("Pomyślnie anulowano rezerwację.", Alert.AlertType.INFORMATION);
+            }
+        });
+    }
+    private void handleRegisterResponse(NetData data) {
+        if (data.operationType == NetData.OperationType.Success) {
+            MessageBox("Zarejestrowano.", Alert.AlertType.INFORMATION);
+            Platform.runLater(() -> OffersController.openScene());
+        }
+    }
+
+    private void handleLoginResponse(NetData data) {
+        if (data.operationType == NetData.OperationType.Success) {
+            MessageBox("Zalogowano.", Alert.AlertType.INFORMATION);
+            Platform.runLater(() -> OffersController.openScene());
+        }
+    }
+
+    private void handleOfferUsernameResponse(NetData data) {
+        if (data.Strings.size() == 1) {
+            OffersController.setUsername(data.Strings.get(0).trim());
+        }
+    }
+
+    private void handleOfferElementResponse(NetData data) {
+        if (data.Strings.size() == 1 && data.Floats.size() == 1 && data.Integers.size() == 2
+                && (data.Images.size() == 1 || data.Images.isEmpty()) && data.Booleans.size() == 1) {
+            try {
+                byte[] imgs = data.Images.size() > 0 ? data.Images.get(0) : new byte[0];
+                boolean isRent = data.Booleans.get(0);
+                int daysLeft = data.Integers.get(1);
+                OffersController.AddOfferNode(data.Strings.get(0).trim(), data.Floats.get(0), imgs,
+                        data.Integers.get(0), isRent, daysLeft);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                System.err.println("ERROR ADDING CAR");
+            }
+        }
+    }
+
+    private void handleOfferDetailsResponse(NetData data) {
+        if (data.Strings.size() == 2 && data.Floats.size() == 1 && data.Integers.size() == 1) {
+            if (OfferDetailsController.instance != null) {
+                OfferDetailsController.instance.SetHeader(data.Strings.get(0).trim());
+                OfferDetailsController.instance.SetDetails(data.Strings.get(1).trim());
+                OfferDetailsController.instance.price = data.Floats.get(0);
+
                 Platform.runLater(() -> {
-                    OffersController offers = OffersController.openScene();
+                    if (data.Booleans.isEmpty() || !data.Booleans.get(0)) {
+                        try {
+                            HBox btnpar = (HBox) OfferDetailsController.instance.deletebtn.getParent();
+                            btnpar.getChildren().remove(OfferDetailsController.instance.deletebtn);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    } else {
+                        OfferDetailsController.instance.deletebtn.setVisible(true);
+                    }
                 });
+
+                for (byte[] img : data.Images) {
+                    OfferDetailsController.instance.AddImage(img);
+                }
+                OfferDetailsController.instance.checkImage();
             }
-        } else if (data.operation == NetData.Operation.Login) {
+        }
+    }
+
+    private void handleLogoutResponse(NetData data) {
+        Platform.runLater(() -> {
+            try {
+                StartPageController spc = new StartPageController();
+                spc.load_scene();
+                MessageBox("Wylogowano.", Alert.AlertType.INFORMATION);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private void handleReservationRequestResponse(NetData data) {
+        if (data.operationType == NetData.OperationType.Success) {
+            Platform.runLater(() -> {
+                MessageBox("Zarezerwowano pojazd. Oczekuj próby kontaktu naszego agenta na twój numer telefonu.", Alert.AlertType.INFORMATION);
+                OffersController.openScene();
+            });
+        }
+    }
+
+    private void handleAddButtonResponse(NetData data) {
+        if (data.Booleans.size() == 1) {
+            Platform.runLater(() -> {
+                if (OffersController.instance != null) {
+                    OffersController.instance.addOfferButton.setVisible(data.Booleans.get(0));
+                }
+            });
+        }
+    }
+
+    private void handleAddOfferResponse(NetData data) {
+        Platform.runLater(() -> {
             if (data.operationType == NetData.OperationType.Success) {
-                MessageBox("Zalogowano.", Alert.AlertType.INFORMATION);
-                Platform.runLater(() -> {
-                    OffersController offers = OffersController.openScene();
-                });
-            }
-        } else if (data.operation == NetData.Operation.OfferUsername) {
-            if (data.Strings.size() == 1) {
-                OffersController.setUsername(data.Strings.get(0).trim());
-            }
-        } else if (data.operation == NetData.Operation.OfferElement) {
-            if (data.Strings.size() == 1 && data.Floats.size() == 1 && data.Integers.size() == 2
-                    && (data.Images.size() == 1 || data.Images.isEmpty()) && data.Booleans.size() == 1) {
-                //System.out.println("ADDING CAR");
-                try {
-                    byte[] imgs = data.Images.size() >0? data.Images.get(0) : new byte[0];
-                    boolean isRent = data.Booleans.get(0);
-                    int daysLeft = data.Integers.get(1);
-                    OffersController.AddOfferNode(data.Strings.get(0).trim(), data.Floats.get(0), imgs,
-                            data.Integers.get(0), isRent, daysLeft);
-                }catch(Exception ex)
-                {
-                    ex.printStackTrace();
-                    System.err.println("ERROR ADDING CAR");
+                MessageBox("Dodano ofertę.", Alert.AlertType.INFORMATION);
+                OffersController.openScene();
+            } else if (data.operationType == NetData.OperationType.Error) {
+                if (addOfferController.instance != null) {
+                    addOfferController.instance.but_confirm.setVisible(true);
                 }
             }
-        } else if (data.operation == NetData.Operation.OfferDetails) {
-            if (data.Strings.size() == 2 && data.Floats.size() == 1 && data.Integers.size() == 1){
-                //System.out.println("ADDING DETAILS");
-                if (OfferDetailsController.instance != null)
-                {
-                    OfferDetailsController.instance.SetHeader(data.Strings.get(0).trim());
-                    OfferDetailsController.instance.SetDetails(data.Strings.get(1).trim());
-                    OfferDetailsController.instance.price = data.Floats.get(0);
-                    //OfferDetailsController.instance.deletebtn.setVisible(!data.Booleans.isEmpty() && data.Booleans.get(0));
-                    Platform.runLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (data.Booleans.isEmpty() || !data.Booleans.get(0))
-                            {
-                                try {
-                                    HBox btnpar = (HBox) OfferDetailsController.instance.deletebtn.getParent();
-                                    btnpar.getChildren().remove(OfferDetailsController.instance.deletebtn);
-                                }catch(Exception ex)
-                                {
-                                    ex.printStackTrace();
-                                }
-                            }else{
-                                OfferDetailsController.instance.deletebtn.setVisible(true);
-                            }
-                        }
-                    });
+        });
+    }
 
-                    for (byte[] img : data.Images)
-                    {
-                        OfferDetailsController.instance.AddImage(img);
-                    }
-                    OfferDetailsController.instance.checkImage();
+    private void handleDeleteOfferResponse(NetData data) {
+        Platform.runLater(() -> {
+            if (data.operationType == NetData.OperationType.Success) {
+                MessageBox("Usunięto ofertę.", Alert.AlertType.INFORMATION);
+                OffersController.openScene();
+            }
+        });
+    }
+
+    private void handleReservationElementResponse(NetData data) {
+        Platform.runLater(() -> {
+            if (data.Strings.size() == 5 && data.Floats.size() == 1 && data.Integers.size() == 5) {
+                if (confirmationController.instance != null) {
+                    String text = "(" + data.Integers.get(0) + ") " + data.Strings.get(3) + " " + data.Strings.get(4) + " (" + data.Strings.get(2) + ", " + data.Integers.get(4) + ")\n";
+                    text += data.Strings.get(0) + " " + data.Strings.get(1) + " (" + data.Integers.get(2) + ", ID: " + data.Integers.get(3) + "), CZAS: " + data.Integers.get(1) + " dni, KOSZT: " + String.format("%.2f zł", data.Integers.get(1) * data.Floats.get(0)) + ".";
+                    confirmationController.instance.AddButton(text, data.Integers.get(0));
                 }
             }
-        } else if (data.operation == NetData.Operation.Logout) {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        StartPageController spc = new StartPageController();
-                        spc.load_scene();
-                        MessageBox("Wylogowano.", Alert.AlertType.INFORMATION);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-        } else if (data.operation == NetData.Operation.ReservationRequest)
-        {
-            if (data.operationType == NetData.OperationType.Success)
-            {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        MessageBox("Zarezerwowano pojazd. Oczekuj próby kontaktu naszego agenta na twój numer telefonu.", Alert.AlertType.INFORMATION);
-                        OffersController.openScene();
-                    }
-                });
-            }
-        }
-        else if (data.operation == NetData.Operation.addButton)
-        {
-            if (data.Booleans.size()==1)
-            {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (OffersController.instance != null)
-                        {
-                            OffersController.instance.addOfferButton.setVisible(data.Booleans.get(0));
-                        }
-                    }
-                });
-            }
-        }
-        else if (data.operation == NetData.Operation.AddOffer)
-        {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    if (data.operationType == NetData.OperationType.Success)
-                    {
-                        MessageBox("Dodano oferte.", Alert.AlertType.INFORMATION);
-                        OffersController.openScene();
-                    }
-                    else if (data.operationType== NetData.OperationType.Error)
-                    {
-                        if (addOfferController.instance!=null)
-                        {
-                            addOfferController.instance.but_confirm.setVisible(true);
-                        }
-                    }
-                }
-            });
-
-        }
-        else if (data.operation == NetData.Operation.DeleteOffer)
-        {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    if (data.operationType == NetData.OperationType.Success)
-                    {
-                        MessageBox("Usunięto ofertę.", Alert.AlertType.INFORMATION);
-                        OffersController.openScene();
-                    }
-                }
-            });
-
-        }
-        else if (data.operation == NetData.Operation.ReservationElement)
-        {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    if (data.Strings.size()==5 && data.Floats.size()==1 && data.Integers.size()==5)
-                    {
-                        if (confirmationController.instance != null)
-                        {
-                            String text = "(" + data.Integers.get(0) + ") " + data.Strings.get(3) + " " + data.Strings.get(4) + " (" + data.Strings.get(2) + ", " + data.Integers.get(4) + ")\n";
-                            text += data.Strings.get(0) + " " + data.Strings.get(1) + " (" + data.Integers.get(2) + ", ID: " + data.Integers.get(3) + "), CZAS: " + data.Integers.get(1) + " dni, KOSZT: " + String.format("%.2f zł", data.Integers.get(1) * data.Floats.get(0)) + ".";
-                            confirmationController.instance.AddButton(text, data.Integers.get(0));
-                        }
-                    }
-                }
-            });
-        }
-        else if ((data.operation == NetData.Operation.CancelReservation || data.operation == NetData.Operation.ConfirmReservation) && data.operationType == NetData.OperationType.Success)
-        {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    if (confirmationController.instance!=null)
-                    {
-                        confirmationController.instance.Refresh();
-                        String oper = data.operation == NetData.Operation.CancelReservation ? "anulowano" : "potwierdzono";
-                        MessageBox("Pomyślnie " + oper + " rezerwację.", Alert.AlertType.INFORMATION);
-                    }
-                }
-            });
-        }
-
+        });
     }
     public void RequestCancelReservation(int id)
     {

@@ -26,6 +26,7 @@ public class NetData implements Serializable {
         ReservationElement,
         ConfirmReservation,
         CancelReservation,
+        ConfirmationsButton,
     }
 
     public enum OperationType {

@@ -40,6 +40,7 @@ public class OffersController {
         {
             Client.instance.RequestUsername();
             Client.instance.RequestOffers();
+            Client.instance.RequestConfButton();
         }
     }
     public static OffersController openScene() {
