@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sty 01, 2024 at 08:04 PM
+-- Generation Time: Sty 02, 2024 at 02:12 PM
 -- Wersja serwera: 10.4.32-MariaDB
 -- Wersja PHP: 8.0.30
 
@@ -39,6 +39,14 @@ CREATE TABLE `auta` (
   `wiekszeZdjecia` varchar(256) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `auta`
+--
+
+INSERT INTO `auta` (`id_auta`, `marka`, `model`, `rok_prod`, `silnik`, `zdjecie`, `opis`, `cenaZaDzien`, `wiekszeZdjecia`) VALUES
+(1, 'Alfa Romeo', 'GT', 2004, '1.9 JTD', 'user/admin/alfa_gt.jpg', 'Alfa Romeo GT, Coupe Alfy Romeo w Dieslu.\nBez lawety w gratisie.', 40.00, 'user/admin/alfagt2.jpg;user/admin/alfagt_rear.jpg;'),
+(2, 'Audi', 'A6 C6', 2007, '3.0 TDI', 'user/admin/audia6c6.jpg', 'Automatyczna skrzynia biegów\nQuattro', 90.00, 'user/admin/audia6c6_1.jpg');
+
 -- --------------------------------------------------------
 
 --
@@ -50,16 +58,17 @@ CREATE TABLE `typy_uzytkownikow` (
   `nazwa_typu` varchar(24) NOT NULL,
   `dodajogloszenia` char(1) NOT NULL,
   `wypozyczauto` char(1) NOT NULL,
-  `usunogloszenie` char(1) NOT NULL
+  `usunogloszenie` char(1) NOT NULL,
+  `manageReservations` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `typy_uzytkownikow`
 --
 
-INSERT INTO `typy_uzytkownikow` (`id_typu`, `nazwa_typu`, `dodajogloszenia`, `wypozyczauto`, `usunogloszenie`) VALUES
-(1, 'Uzytkownik', '0', '1', '0'),
-(2, 'Administrator', '1', '1', '1');
+INSERT INTO `typy_uzytkownikow` (`id_typu`, `nazwa_typu`, `dodajogloszenia`, `wypozyczauto`, `usunogloszenie`, `manageReservations`) VALUES
+(1, 'Uzytkownik', '0', '1', '0', 0),
+(2, 'Administrator', '1', '1', '1', 1);
 
 -- --------------------------------------------------------
 
@@ -77,6 +86,13 @@ CREATE TABLE `uzytkownicy` (
   `numer_telefonu` double NOT NULL,
   `typy_uzytkownikow_id_typu` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `uzytkownicy`
+--
+
+INSERT INTO `uzytkownicy` (`id_uzytkownika`, `login`, `password`, `imie`, `nazwisko`, `data_utworzenia`, `numer_telefonu`, `typy_uzytkownikow_id_typu`) VALUES
+(1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'System', 'Administrator', '2024-01-01 20:09:15', 100000000, 2);
 
 -- --------------------------------------------------------
 
@@ -131,7 +147,7 @@ ALTER TABLE `wypozyczenie`
 -- AUTO_INCREMENT for table `auta`
 --
 ALTER TABLE `auta`
-  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `typy_uzytkownikow`
@@ -143,13 +159,13 @@ ALTER TABLE `typy_uzytkownikow`
 -- AUTO_INCREMENT for table `uzytkownicy`
 --
 ALTER TABLE `uzytkownicy`
-  MODIFY `id_uzytkownika` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_uzytkownika` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `wypozyczenie`
 --
 ALTER TABLE `wypozyczenie`
-  MODIFY `id_wypozyczenia` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_wypozyczenia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
