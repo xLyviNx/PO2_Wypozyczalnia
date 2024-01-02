@@ -7,18 +7,30 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseHandler {
-    private static final String URL = "jdbc:mysql://localhost:3306/wypozyczalnia";
-    private static final String USER = "wypozyczalniaServer";
-    private static final String PASSWORD = "wypo%!@#!URjqwe3";
+    public static String URL = "";
+    public static String USER = "";
+    public static String PASSWORD = "";
     public Connection conn;
     private Statement statement;
-
+    public static String makeURL(String ip, String port, String dbname)
+    {
+        return "jdbc:mysql://" + ip + ":" + port + "/"+dbname;
+    }
+    public static void setCredentials(String ip, String port, String dbname, String username, String password)
+    {
+        URL=makeURL(ip,port,dbname);
+        USER=username;
+        PASSWORD = password;
+        System.out.println(URL);
+        System.out.println(USER);
+        System.out.println(PASSWORD);
+    }
     public DatabaseHandler() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(URL, USER, PASSWORD);
             statement = conn.createStatement();
-            System.out.println("CONN: " + conn.isClosed());
+            //System.out.println("CONN: " + conn.isClosed());
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }

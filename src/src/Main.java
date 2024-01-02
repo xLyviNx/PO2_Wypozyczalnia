@@ -6,37 +6,43 @@ import java.util.Set;
 
 public class Main
 {
+    public static String ip;
+    public static int port;
     public static void main(String[] args)
     {
-        if (args.length>0)
+        if (args.length==8)
         {
-            if (args[0].trim().equals("server"))
-            {
+            if (args[0].trim().equals("server")) {
                 System.out.println("Server is starting...");
+                ip = args[1];
+                port = Integer.parseInt(args[2].trim());
+                DatabaseHandler.setCredentials(args[3], args[4], args[5], args[6], args[7]);
                 Server sv = new Server();
                 try {
-                    sv.start();
+                    sv.start(ip, port);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
-                return;
-            }else if (args[0].trim().equals("console-client"))
+            }
+        }
+        else if (args.length == 2) {
+            System.out.println("Client is starting...");
+            try
             {
-                return;
+                ip = args[0];
+                port = Integer.parseInt(args[1].trim());
+                RunClient();
+                WypozyczalniaOkno.main(args);
+            }catch (Exception ex)
+            {
+                ex.printStackTrace();
             }
 
         }
-        System.out.println("Client is starting...");
-        RunClient();
-        WypozyczalniaOkno.main(args);
+
     }
     public static void RunClient()
     {
-        /*Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-        for (Thread t: threadSet) {
-            if (t.isAlive())
-            System.out.println(t.getName());
-        }*/
         Client cl;
         if (Client.instance != null)
         {
@@ -46,7 +52,7 @@ public class Main
         }
         Thread clTh = new Thread(() -> {
             try {
-                cl.start("localhost", 12345);
+                cl.start(ip, port);
             } catch (DisconnectException e) {
                 System.out.println("NO CONNECTION");
                 if (WypozyczalniaOkno.instance != null)

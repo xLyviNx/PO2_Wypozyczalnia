@@ -1,5 +1,6 @@
 package src;
 
+import javafx.scene.Scene;
 import jdk.jshell.execution.Util;
 
 import javax.imageio.ImageIO;
@@ -15,25 +16,61 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
-    final int port = 12345;
+    private volatile boolean closing = false;
+    private ExecutorService executor;
     public ArrayList<User> connectedClients = new ArrayList<>();
     private ServerSocket serverSocket;
 
-    public void start() throws IOException {
+    public void start(String ip, int port) throws IOException {
         serverSocket = new ServerSocket(port);
-        ExecutorService executor = Executors.newCachedThreadPool();
-
+        executor = Executors.newCachedThreadPool();
+        Thread console = new Thread(()->handleConsoleCommands(serverSocket));
+        console.setDaemon(true);
+        console.start();
         while (true) {
             try {
-                Socket clientSocket = serverSocket.accept();
-                executor.submit(() -> handleClient(clientSocket));
-            }catch(Exception ex)
-            {
-                ex.printStackTrace();
+                if (!serverSocket.isClosed() && !closing) {
+                    Socket clientSocket = serverSocket.accept();
+                    executor.submit(() -> handleClient(clientSocket));
+                }
+            } catch (Exception ex) {
+                if (!closing) {
+                    ex.printStackTrace();
+                }
+            }
+            if (closing)
+                break;
+        }
+        return;
+    }
+
+    private void handleConsoleCommands(ServerSocket serverSocket) {
+        System.out.println("Konsola jest aktywna.");
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            String command = scanner.nextLine();
+            switch (command.toLowerCase()) {
+                case "test":
+                    System.out.println("TEST");
+                    break;
+                case "exit":
+                case "stop":
+                    System.out.println("Zatrzymywanie serwera...");
+                    try {
+                        closing = true;
+                        executor.shutdown();
+                        serverSocket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return;
+                default:
+                    System.out.println("Nieznana komenda.");
             }
         }
     }
@@ -418,8 +455,6 @@ public class Server {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-
-            // Jeśli kod dochodzi do tego miejsca, to usuwanie oferty nie powiodło się
             SendError(output, "Nie można usunąć tej oferty lub oferta nie istnieje!", res);
         } else {
             SendError(output, "Nieprawidłowe dane przesłane do usuwania oferty!", res);
@@ -1059,14 +1094,6 @@ public class Server {
         data.Strings.add(mes);
         output.writeObject(data);
         output.flush();
-    }
-
-    public static void main(String[] args) {
-        try {
-            new Server().start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }
 

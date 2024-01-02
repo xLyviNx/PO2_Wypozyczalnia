@@ -29,8 +29,7 @@ public class Client {
                 throw new RuntimeException(e);
             }
         }
-        System.out.println("WINDOW FOUND");
-
+        //System.out.println("WINDOW FOUND");
         try {
             instance = this;
             socket = new Socket(address, port);
