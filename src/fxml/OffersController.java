@@ -4,7 +4,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -94,12 +93,12 @@ public class OffersController {
         }
         return null;
     }
-    public static void AddOfferNode(String vehicleName, float price, byte[] imageBytes, int dbid) {
+    public static void AddOfferNode(String vehicleName, float price, byte[] imageBytes, int dbid, boolean isRent, int daysLeft) {
             if (instance != null && WypozyczalniaOkno.instance != null && instance.scene == WypozyczalniaOkno.getPrimaryStage().getScene()) {
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
-                        instance.flow.getChildren().add(instance.createOfferNode(vehicleName, price, imageBytes, dbid));
+                        instance.flow.getChildren().add(instance.createOfferNode(vehicleName, price, imageBytes, dbid, isRent, daysLeft));
                     }
                 });
             }
@@ -114,9 +113,9 @@ public class OffersController {
         }
     }
 
-    private Node createOfferNode(String vehicleName, float price, byte[] imageBytes, int dbid) {
+    private Node createOfferNode(String vehicleName, float price, byte[] imageBytes, int dbid, boolean isRent, int daysLeft) {
         VBox offerNode = new VBox();
-        offerNode.getStyleClass().addAll("offerButton");
+        offerNode.getStyleClass().addAll( isRent? "offerButtonRent" : (daysLeft == -1? "offerButtonAwaiting" : "offerButton"));
         offerNode.setAlignment(Pos.CENTER); // Ustawienie środka dla całego VBox
 
         HBox imageBox = new HBox();
@@ -141,17 +140,29 @@ public class OffersController {
         vehicleLabel.getStyleClass().addAll("offerLabel");
         vehicleLabel.setFont(Font.font("Calibri Light", 20.0)); // Ustawienie rozmiaru tekstu
 
-        Label priceLabel = new Label(String.format("%.2f zł/dzień", price));
+        Label priceLabel =null;
+        if (isRent)
+        {
+            priceLabel = new Label("Pozostało " + daysLeft + " dni.");
+        }
+        else if (daysLeft==-1)
+        {
+            priceLabel = new Label("Oczekuje na rozpatrzenie");
+        }
+        else{
+            priceLabel = new Label(String.format("%.2f zł/dzień", price));
+        }
         priceLabel.getStyleClass().addAll("offerLabel");
         priceLabel.setFont(Font.font("Calibri Light", 16.0)); // Ustawienie rozmiaru tekstu
 
         textInfo.getChildren().addAll(vehicleLabel, priceLabel);
 
         offerNode.getChildren().addAll(imageBox, textInfo);
-        offerNode.setOnMouseClicked(event -> {
-            ClickOnItem(dbid);
-        });
-
+        if(!isRent && daysLeft!=-1) {
+            offerNode.setOnMouseClicked(event -> {
+                ClickOnItem(dbid);
+            });
+        }
         return offerNode;
     }
     @FXML

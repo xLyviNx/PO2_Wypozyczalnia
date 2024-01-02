@@ -1,6 +1,5 @@
 package src;
 
-import com.sun.javafx.scene.shape.MeshHelper;
 import fxml.*;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
@@ -167,13 +166,15 @@ public class Client {
                 OffersController.setUsername(data.Strings.get(0).trim());
             }
         } else if (data.operation == NetData.Operation.OfferElement) {
-            if (data.Strings.size() == 1 && data.Floats.size() == 1 && data.Integers.size() == 1
-                    && (data.Images.size() == 1 || data.Images.isEmpty())) {
+            if (data.Strings.size() == 1 && data.Floats.size() == 1 && data.Integers.size() == 2
+                    && (data.Images.size() == 1 || data.Images.isEmpty()) && data.Booleans.size() == 1) {
                 //System.out.println("ADDING CAR");
                 try {
                     byte[] imgs = data.Images.size() >0? data.Images.get(0) : new byte[0];
+                    boolean isRent = data.Booleans.get(0);
+                    int daysLeft = data.Integers.get(1);
                     OffersController.AddOfferNode(data.Strings.get(0).trim(), data.Floats.get(0), imgs,
-                            data.Integers.get(0));
+                            data.Integers.get(0), isRent, daysLeft);
                 }catch(Exception ex)
                 {
                     ex.printStackTrace();

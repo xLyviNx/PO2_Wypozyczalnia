@@ -883,29 +883,54 @@ public class Server {
         output.flush();
     }
 
-    private void handleOfferElement(ObjectOutputStream output, User session)  {
-        String query = "SELECT a.`id_auta`, a.`marka`, a.`model`, a.`rok_prod`, a.`silnik`, a.`zdjecie`, a.`opis`, a.`cenaZaDzien` " +
-                "FROM `auta` a " +
-                "LEFT JOIN `wypozyczenie` w ON a.`id_auta` = w.`auta_id_auta` " +
-                "WHERE w.`id_wypozyczenia` IS NULL " +
-                "   OR (w.`data_wypozyczenia` IS NOT NULL " +
-                "       AND NOT (NOW() BETWEEN w.`data_wypozyczenia` AND DATE_ADD(w.`data_wypozyczenia`, INTERVAL w.`days` DAY))) " +
-                "ORDER BY a.`cenaZaDzien` ASC;";
+    private void handleOfferElement(ObjectOutputStream output, User session) {
         try {
             NetData addBr = new NetData(NetData.Operation.addButton);
             addBr.Booleans.add(session.canAddOffers);
             output.writeObject(addBr);
             output.flush();
-        } catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         DatabaseHandler dbh = new DatabaseHandler();
         if (!checkDBConnection(dbh, output)) {
             return;
         }
-        ResultSet result = dbh.executeQuery(query);
+        String loginUzytkownika = session.username;
+        String query = "SELECT " +
+                "    a.`id_auta`, a.`marka`, a.`model`, a.`rok_prod`, a.`silnik`, a.`zdjecie`, a.`opis`, a.`cenaZaDzien`, " +
+                "    w.`data_wypozyczenia`, w.`days`, w.`id_wypozyczenia`," +
+                "    ABS(DATEDIFF(NOW(), IFNULL(w.`data_wypozyczenia`, NOW()) + INTERVAL IFNULL(w.`days`, 0) DAY)) AS dni_pozostale " +
+                "FROM " +
+                "    `auta` a " +
+                "    LEFT JOIN `wypozyczenie` w ON a.`id_auta` = w.`auta_id_auta` " +
+                "    LEFT JOIN `uzytkownicy` u ON w.`uzytkownicy_id_uzytkownika` = u.`id_uzytkownika` " +
+                "WHERE " +
+                "    ( " +
+                "        w.`id_wypozyczenia` IS NULL " +
+                "        OR ( " +
+                "            w.`data_wypozyczenia` IS NOT NULL " +
+                "            AND NOT (NOW() BETWEEN w.`data_wypozyczenia` AND DATE_ADD(w.`data_wypozyczenia`, INTERVAL w.`days` DAY)) " +
+                "        ) " +
+                "        OR ( " +
+                "            u.`id_uzytkownika` IS NOT NULL " +
+                "            AND u.`login` = ? " +
+                "            AND (NOW() BETWEEN IFNULL(w.`data_wypozyczenia`, NOW()) AND DATE_ADD(IFNULL(w.`data_wypozyczenia`, NOW()), INTERVAL IFNULL(w.`days`, 0) DAY)) " +
+                "        ) " +
+                "        OR ( " +
+                "            w.`data_wypozyczenia` IS NULL " +
+                "            AND u.`login` = ? " +
+                "        ) " +
+                "    ) " +
+                "ORDER BY " +
+                "    a.`cenaZaDzien` ASC;";
         try {
+            PreparedStatement preparedStatement = dbh.conn.prepareStatement(query);
+            preparedStatement.setString(1, loginUzytkownika);
+            preparedStatement.setString(2, loginUzytkownika);
+
+            ResultSet result = preparedStatement.executeQuery();
+
             while (result.next()) {
                 NetData response = new NetData(NetData.Operation.OfferElement);
                 int id = result.getInt("id_auta");
@@ -919,6 +944,32 @@ public class Server {
                 response.Strings.add(topText);
                 response.Floats.add(cena);
                 response.Integers.add(id);
+
+                int idWypo = result.getInt("id_wypozyczenia");
+                if (result.wasNull())
+                {
+                    response.Booleans.add(false);
+                    response.Integers.add(0);
+                }
+                else
+                {
+                    Date dataWypo = result.getDate("data_wypozyczenia");
+                    if (result.wasNull()) {
+                        response.Booleans.add(false);
+                        response.Integers.add(-1);
+                    } else {
+                        int daysLeft = result.getInt("dni_pozostale");
+                        if (result.wasNull()) {
+                            System.out.println("DNI NULL");
+                            response.Booleans.add(false);
+                            response.Integers.add(0);
+                        } else {
+                            System.out.println("DNI EXIST");
+                            response.Booleans.add(true);
+                            response.Integers.add(daysLeft);
+                        }
+                    }
+                }
                 try {
                     String zdjecie = result.getString("zdjecie");
                     if (zdjecie != null && !zdjecie.isEmpty()) {
@@ -926,9 +977,7 @@ public class Server {
                         //System.out.println("IMG SIZE: " + img.length);
                         response.Images.add(img);
                     }
-                }
-                catch (Exception ex)
-                {
+                } catch (Exception ex) {
                     ex.printStackTrace();
                 }
                 output.writeObject(response);
@@ -942,17 +991,17 @@ public class Server {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            try {
+                SendError(output, "Błąd bazy danych.", new NetData(NetData.Operation.Unspecified));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
         dbh.close();
     }
-
-
-
-
     private void SendError(ObjectOutputStream output, String error, NetData data) throws IOException {
         if (data == null || output == null)
             return;
