@@ -5,8 +5,6 @@ import java.sql.Date;
 import java.util.ArrayList;
 
 public class NetData implements Serializable {
-    private static final long serialVersionUID = 1L;
-
     public enum Operation {
         Unspecified,
         Register,
@@ -54,7 +52,6 @@ public class NetData implements Serializable {
         operation = op;
     }
 
-    // Metoda do zapisywania obiektu do strumienia
     public static byte[] serialize(NetData netData) throws IOException {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
              ObjectOutputStream oos = new ObjectOutputStream(bos)) {
@@ -62,8 +59,6 @@ public class NetData implements Serializable {
             return bos.toByteArray();
         }
     }
-
-    // Metoda do deserializacji obiektu z tablicy bajtów
     public static NetData deserialize(byte[] data) throws IOException, ClassNotFoundException {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
              ObjectInputStream ois = new ObjectInputStream(bis)) {
