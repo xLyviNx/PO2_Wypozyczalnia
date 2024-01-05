@@ -36,17 +36,6 @@ public class NetData implements Serializable {
 
     public OperationType operationType;
     public Operation operation;
-    public ArrayList<String> Strings = new ArrayList<>();
-    public ArrayList<Integer> Integers = new ArrayList<>();
-    public ArrayList<Float> Floats = new ArrayList<>();
-    public ArrayList<Boolean> Booleans = new ArrayList<>();
-    public ArrayList<byte[]> Images = new ArrayList<>();
-    public ArrayList<Date> Dates = new ArrayList<>();
-
-    public NetData(Operation op, String str) {
-        operation = op;
-        Strings.add(str);
-    }
 
     public NetData(Operation op) {
         operation = op;

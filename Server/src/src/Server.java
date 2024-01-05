@@ -1,5 +1,7 @@
 package src;
 
+import com.mysql.cj.log.Log;
+import src.packets.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -217,11 +219,9 @@ public class Server {
     }
 
     private void handleConfirmButton(NetData data, User session, ObjectOutputStream output) {
-        NetData res = new NetData(NetData.Operation.ConfirmationsButton);
+        confirmButtonVisibility res = new confirmButtonVisibility(NetData.Operation.ConfirmationsButton, false);
         if (session.isSignedIn && !session.username.isEmpty() && session.canManageReservations) {
-            res.Booleans.add(true);
-        } else {
-            res.Booleans.add(false);
+            res.isVisible = true;
         }
         try {
             output.writeObject(res);
@@ -720,8 +720,8 @@ public class Server {
                 ResultSet result = statement.executeQuery();
 
                 if (result.next()) {
-                    NetData response = new NetData(NetData.Operation.OfferDetails);
-
+                    NetData response = new VehiclePacket();
+                    response.operation= NetData.Operation.OfferDetails;
                     try {
                         String marka = result.getString("marka");
                         String model = result.getString("model");
@@ -730,6 +730,7 @@ public class Server {
                         float cenaZaDzien = result.getFloat("cenaZaDzien");
                         String opis = result.getString("opis");
 
+                        response.
                         response.Strings.add(marka + " " + model);
                         response.Strings.add("Silnik: " + silnik + "\nRok produkcji: " + rokProdukcji + "\nCena za dzień: " + String.format("%.2f zł", cenaZaDzien) + "\n\n" + opis);
                         response.Floats.add(cenaZaDzien);
@@ -751,19 +752,19 @@ public class Server {
                         output.flush();
                     } catch (SQLException | IOException e) {
                         e.printStackTrace();
-                        SendError(output, "Błąd przetwarzania wyników zapytania.", new NetData(NetData.Operation.OfferDetails));
+                        SendError(output, "Błąd przetwarzania wyników zapytania.");
                     }
                 } else {
-                    SendError(output, "Brak oferty o podanym identyfikatorze.", new NetData(NetData.Operation.OfferDetails));
+                    SendError(output, "Brak oferty o podanym identyfikatorze.");
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
-                SendError(output, "Błąd bazy danych!", new NetData(NetData.Operation.OfferDetails));
+                SendError(output, "Błąd bazy danych!");
             } finally {
                 dbh.close();
             }
         } else {
-            SendError(output, "Nieprawidłowe dane zapytania.", new NetData(NetData.Operation.OfferDetails));
+            SendError(output, "Nieprawidłowe dane zapytania.");
         }
     }
 
@@ -771,94 +772,84 @@ public class Server {
     private void handleRegister(NetData data, ObjectOutputStream output, User session) throws IOException, SQLException {
         NetData response = new NetData(NetData.Operation.Register);
         if (session.isSignedIn) {
-            SendError(output, "Jesteś już zalogowany!", response);
+            SendError(output, "Jesteś już zalogowany!");
             return;
         }
-        if (data.Strings.size() == 5 && data.Integers.size() == 1) {
-            int numtel = data.Integers.get(0);
-            if (String.valueOf(numtel).length() == 9) {
-                for (String s : data.Strings) {
-                    if (s.isEmpty()) {
-                        SendError(output, "Żadne pole nie może być puste!", response);
+        RegisterPacket regData = (RegisterPacket) data;
+
+        if (String.valueOf(regData.phonenumber).length() == 9) {
+            if(regData.anyEmpty())
+            {
+                SendError(output, "Żadne pole nie może być puste!");
+                return;
+            }
+            if (regData.password.equals(regData.repeat_password))
+            {
+                String existsQuery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE `login` = ? OR numer_telefonu = ?";
+                DatabaseHandler dbh = new DatabaseHandler();
+
+                try {
+                    if (!checkDBConnection(dbh, output)) {
                         return;
                     }
-                }
-                if (data.Strings.get(1).equals(data.Strings.get(2))) {
-                    String login = data.Strings.get(0);
-                    String password = data.Strings.get(1); // Uwaga: Haszuj hasło przed zapisaniem!
-                    String existsQuery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE `login` = ? OR numer_telefonu = ?";
-                    DatabaseHandler dbh = new DatabaseHandler();
 
-                    try {
-                        if (!checkDBConnection(dbh, output)) {
+                    try (PreparedStatement existsStatement = dbh.conn.prepareStatement(existsQuery)) {
+                        existsStatement.setString(1, regData.login);
+                        existsStatement.setInt(2, regData.phonenumber);
+
+                        ResultSet existing = existsStatement.executeQuery();
+
+                        if (existing.next()) {
+                            SendError(output, "Użytkownik o podanym loginie lub numerze telefonu już istnieje.");
                             return;
                         }
-
-                        try (PreparedStatement existsStatement = dbh.conn.prepareStatement(existsQuery)) {
-                            existsStatement.setString(1, login);
-                            existsStatement.setInt(2, numtel);
-
-                            ResultSet existing = existsStatement.executeQuery();
-
-                            if (existing.next()) {
-                                SendError(output, "Użytkownik o podanym loginie lub numerze telefonu już istnieje.", response);
-                                return;
-                            }
-                        }
-
-                        String registerQuery = "INSERT INTO uzytkownicy(`login`,`password`,`imie`,`nazwisko`,`data_utworzenia`,`numer_telefonu`,`typy_uzytkownikow_id_typu`) VALUES (?, ?, ?, ?, NOW(), ?, 1)";
-                        try (PreparedStatement registerStatement = dbh.conn.prepareStatement(registerQuery)) {
-                            registerStatement.setString(1, login);
-                            registerStatement.setString(2, password); // Uwaga: Haszuj hasło przed ustawieniem!
-                            registerStatement.setString(3, data.Strings.get(3).trim());
-                            registerStatement.setString(4, data.Strings.get(4).trim());
-                            registerStatement.setInt(5, numtel);
-
-                            int registerResult = registerStatement.executeUpdate();
-
-                            if (registerResult > 0) {
-                                response.operationType = NetData.OperationType.Success;
-                                output.writeObject(response);
-                                output.flush();
-                                session.isSignedIn = true;
-                                session.username = login;
-                                fetchUserPermissions(session);
-                            } else {
-                                SendError(output, "Nie udało się zarejestrować.", response);
-                            }
-                        }
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        SendError(output, "Błąd bazy danych!", response);
-                    } finally {
-                        dbh.close();
                     }
-                } else {
-                    SendError(output, "Podane hasła nie są identyczne!", response);
+
+                    String registerQuery = "INSERT INTO uzytkownicy(`login`,`password`,`imie`,`nazwisko`,`data_utworzenia`,`numer_telefonu`,`typy_uzytkownikow_id_typu`) VALUES (?, ?, ?, ?, NOW(), ?, 1)";
+                    try (PreparedStatement registerStatement = dbh.conn.prepareStatement(registerQuery)) {
+                        registerStatement.setString(1, regData.login);
+                        registerStatement.setString(2, regData.password);
+                        registerStatement.setString(3, regData.imie);
+                        registerStatement.setString(4, regData.nazwisko);
+                        registerStatement.setInt(5, regData.phonenumber);
+
+                        int registerResult = registerStatement.executeUpdate();
+
+                        if (registerResult > 0) {
+                            response.operationType = NetData.OperationType.Success;
+                            output.writeObject(response);
+                            output.flush();
+                            session.isSignedIn = true;
+                            session.username = regData.login;
+                            fetchUserPermissions(session);
+                        } else {
+                            SendError(output, "Nie udało się zarejestrować.");
+                        }
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    SendError(output, "Błąd bazy danych!");
+                } finally {
+                    dbh.close();
                 }
             } else {
-                SendError(output, "Numer telefonu jest nieprawidłowy!", response);
+                SendError(output, "Podane hasła nie są identyczne!");
             }
         } else {
-            SendError(output, "Niepoprawne dane rejestracyjne.", response);
+            SendError(output, "Numer telefonu jest nieprawidłowy!");
         }
     }
 
     private void handleLogin(NetData data, ObjectOutputStream output, User session) throws IOException, SQLException {
-        NetData response = new NetData(NetData.Operation.Login);
 
         if (session.isSignedIn) {
-            SendError(output, "Jesteś już zalogowany!", response);
+            SendError(output, "Jesteś już zalogowany!");
             return;
         }
-
-        if (data.Strings.size() == 2) {
-            for (String s : data.Strings) {
-                if (s.isEmpty()) {
-                    SendError(output, "Żadne pole nie może być puste!", response);
-                    return;
-                }
-            }
+        LoginPacket logdata = (LoginPacket)data;
+        if (logdata.login.isEmpty() || logdata.password.isEmpty()) {
+            SendError(output, "Żadne pole nie może być puste!");
+        }
 
             String existsQuery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE BINARY `login` = ? AND BINARY password = ?";
             DatabaseHandler dbh = new DatabaseHandler();
@@ -869,46 +860,42 @@ public class Server {
                 }
 
                 try (PreparedStatement existsStatement = dbh.conn.prepareStatement(existsQuery)) {
-                    existsStatement.setString(1, data.Strings.get(0));
-                    existsStatement.setString(2, data.Strings.get(1));
+                    existsStatement.setString(1, logdata.login);
+                    existsStatement.setString(2, logdata.password);
 
                     ResultSet existing = existsStatement.executeQuery();
-
                     if (existing.next()) {
                         session.isSignedIn = true;
-                        session.username = data.Strings.get(0);
+                        session.username = logdata.login;
                         fetchUserPermissions(session);
+                        NetData response = new NetData(NetData.Operation.Login);
                         response.operationType = NetData.OperationType.Success;
                         output.writeObject(response);
                         output.flush();
                     } else {
-                        SendError(output, "Nie udało się zalogować! Upewnij się, że dane są poprawne.", response);
+                        SendError(output, "Nie udało się zalogować! Upewnij się, że dane są poprawne.");
                     }
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
-                SendError(output, "Błąd bazy danych!", response);
+                SendError(output, "Błąd bazy danych!");
             } finally {
                 dbh.close();
             }
         }
     }
     private void handleOfferUsername(ObjectOutputStream output, User session) throws IOException {
-        NetData response = new NetData(NetData.Operation.OfferUsername);
-        response.Booleans.add(session.isSignedIn);
+        UsernamePacket response = new UsernamePacket();
+        response.isSignedIn=session.isSignedIn;
         if (session.isSignedIn) {
-            response.Strings.add(session.username);
-        } else {
-            response.Strings.add("NIEZALOGOWANY");
+            response.username=session.username;
         }
         output.writeObject(response);
         output.flush();
     }
-
     private void handleOfferElement(ObjectOutputStream output, User session) {
         try {
-            NetData addBr = new NetData(NetData.Operation.addButton);
-            addBr.Booleans.add(session.canAddOffers);
+            addOfferButtonVisibility addBr = new addOfferButtonVisibility (session.canAddOffers);
             output.writeObject(addBr);
             output.flush();
         } catch (IOException e) {
@@ -954,41 +941,33 @@ public class Server {
             ResultSet result = preparedStatement.executeQuery();
 
             while (result.next()) {
-                NetData response = new NetData(NetData.Operation.OfferElement);
+                VehiclePacket response = new VehiclePacket();
                 int id = result.getInt("id_auta");
-
                 String marka = result.getString("marka");
                 String model = result.getString("model");
                 String silnik = result.getString("silnik");
                 int prod = result.getInt("rok_prod");
                 float cena = result.getFloat("cenaZaDzien");
                 String topText = marka + " " + model + " (" + prod + ") " + silnik;
-                response.Strings.add(topText);
-                response.Floats.add(cena);
-                response.Integers.add(id);
+
+                response.brand=marka;
+                response.model=model;
+                response.engine=silnik;
+                response.year=prod;
+                response.price = cena;
+                response.databaseId=id;
 
                 int idWypo = result.getInt("id_wypozyczenia");
-                if (result.wasNull())
-                {
-                    response.Booleans.add(false);
-                    response.Integers.add(0);
-                }
-                else
+                if (!result.wasNull())
                 {
                     Date dataWypo = result.getDate("data_wypozyczenia");
                     if (result.wasNull()) {
-                        response.Booleans.add(false);
-                        response.Integers.add(-1);
+                        response.daysLeft=-1;
                     } else {
                         int daysLeft = result.getInt("dni_pozostale");
-                        if (result.wasNull()) {
-                            System.out.println("DNI NULL");
-                            response.Booleans.add(false);
-                            response.Integers.add(0);
-                        } else {
-                            System.out.println("DNI EXIST");
-                            response.Booleans.add(true);
-                            response.Integers.add(daysLeft);
+                        if (!result.wasNull()) {
+                            response.isRented=true;
+                            response.daysLeft=daysLeft;
                         }
                     }
                 }
@@ -997,7 +976,7 @@ public class Server {
                     if (zdjecie != null && !zdjecie.isEmpty()) {
                         byte[] img = Utilities.loadImageAsBytes(zdjecie, false);
                         //System.out.println("IMG SIZE: " + img.length);
-                        response.Images.add(img);
+                        response.thumbnail=img;
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -1013,20 +992,20 @@ public class Server {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            SendError(output, "Błąd bazy danych.", new NetData(NetData.Operation.Unspecified));
+            SendError(output, "Błąd bazy danych.");
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
         dbh.close();
     }
-    private void SendError(ObjectOutputStream output, String error, NetData data) {
-        if (data == null || output == null)
+    private void SendError(ObjectOutputStream output, String error) {
+        if (output == null)
             return;
-        data.operationType = NetData.OperationType.Error;
-        data.Strings.add(error);
+        ErrorPacket err = new ErrorPacket(error);
+        err.operationType = NetData.OperationType.Error;
         try {
-            output.writeObject(data);
+            output.writeObject(err);
             output.flush();
         } catch (IOException e) {
             System.err.println("Nie udalo sie wyslac komunikatu bledu.");
@@ -1038,26 +1017,26 @@ public class Server {
         try {
             if (dbh.conn == null || dbh.conn.isClosed()) {
                 if (output!=null)
-                    SendError(output, "Błąd połączenia z bazą danych.", response);
+                    SendError(output, "Błąd połączenia z bazą danych.");
                 dbh.close();
                 return false;
             }
         } catch (SQLException e) {
             if (output!=null) {
-                SendError(output, "Błąd połączenia z bazą danych.", response);
+                SendError(output, "Błąd połączenia z bazą danych.");
             }
             return false;
         }
         return true;
     }
-    void SendMessage(ObjectOutputStream output, String mes, NetData data) throws IOException {
+    /*void SendMessage(ObjectOutputStream output, String mes, NetData data) throws IOException {
         if (data == null || output == null)
             return;
         data.operationType = NetData.OperationType.MessageBox;
         data.Strings.add(mes);
         output.writeObject(data);
         output.flush();
-    }
+    }*/
 }
 
 class User {
