@@ -1,3 +1,0 @@
-CREATE USER 'wypozyczalniaServer'@'localhost' IDENTIFIED BY 'wypo%!@#!URjqwe3';
-GRANT ALL PRIVILEGES ON wypozyczalnia.* TO 'wypozyczalniaServer'@'localhost';
-FLUSH PRIVILEGES;
