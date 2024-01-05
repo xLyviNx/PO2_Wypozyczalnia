@@ -5,6 +5,8 @@ import java.sql.Date;
 import java.util.ArrayList;
 
 public class NetData implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L; // Dowolna liczba, możesz użyć generatora
     public enum Operation {
         Unspecified,
         Register,
@@ -22,8 +24,7 @@ public class NetData implements Serializable {
         DeleteOffer,
         RequestConfirmtations,
         ReservationElement,
-        ConfirmReservation,
-        CancelReservation,
+        ManageReservation,
         ConfirmationsButton,
     }
 

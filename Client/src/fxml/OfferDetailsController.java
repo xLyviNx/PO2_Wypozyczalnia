@@ -197,7 +197,6 @@ public class OfferDetailsController
     }
     public void checkImage() {
 
-        System.out.println("C4");
         photoprev.setVisible(!images.isEmpty() && currentImage >= 1);
         photonext.setVisible(!images.isEmpty() && currentImage < images.size() - 1);
         if (images.size() > currentImage && carphoto != null) {

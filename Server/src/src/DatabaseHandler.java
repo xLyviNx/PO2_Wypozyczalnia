@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class DatabaseHandler {
+public class DatabaseHandler implements AutoCloseable {
     public static String URL = "";
     public static String USER = "";
     public static String PASSWORD = "";
@@ -21,9 +21,9 @@ public class DatabaseHandler {
         URL=makeURL(ip,port,dbname);
         USER=username;
         PASSWORD = password;
-        //System.out.println(URL);
-        //System.out.println(USER);
-        //System.out.println(PASSWORD);
+        System.out.println(URL);
+        System.out.println(USER);
+        System.out.println(PASSWORD);
     }
     public DatabaseHandler() {
         try {
@@ -56,16 +56,15 @@ public class DatabaseHandler {
         return rowsAffected;
     }
 
+    @Override
     public void close() {
         try {
-            if (statement != null) {
-                statement.close();
-            }
-            if (conn != null) {
+            if (conn != null && !conn.isClosed()) {
                 conn.close();
             }
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

@@ -16,7 +16,6 @@ public class Utilities
             else
                 f=new File(ServerMain.imagePath + imagePath);
             URL resourceUrl = new URL(f.toURI().toString());
-            System.out.println("Absolute URL " + resourceUrl.toString());
             if (resourceUrl != null) {
                 try (InputStream stream = resourceUrl.openStream()) {
                     return stream.readAllBytes();

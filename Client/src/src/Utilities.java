@@ -10,8 +10,7 @@ public class Utilities
     public static byte[] loadImageAsBytes(String imagePath) {
         try {
 
-            File f;
-            f = new File(imagePath);
+            File f= new File(imagePath);
             URL resourceUrl = new URL(f.toURI().toString());
             System.out.println("Absolute URL " + resourceUrl.toString());
             if (resourceUrl != null) {

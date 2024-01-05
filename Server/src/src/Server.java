@@ -82,9 +82,6 @@ public class Server {
             session.isSignedIn = false;
             session.clientSocket = socket;
             connectedClients.add(session);
-            output.writeObject(new NetData(NetData.Operation.Unspecified, "CONNECTED"));
-            output.flush();
-
             while (true) {
                 NetData data = (NetData) input.readObject();
 
@@ -93,10 +90,8 @@ public class Server {
                     System.out.println("Connection closing...");
                     socket.close();
                     System.out.println("Closed");
-                    if (session != null) {
-                        connectedClients.remove(session);
-                        session = null;
-                    }
+                    connectedClients.remove(session);
+                    session = null;
                     break;
                 } else if (!data.operation.equals(NetData.Operation.Ping)) {
                     try {
@@ -132,8 +127,7 @@ public class Server {
                                     }
                                 }
                                 else{
-                                    NetData response = new NetData(NetData.Operation.Unspecified);
-                                    SendError(output, "Nie jestes zalogowany!", response);
+                                    SendError(output, "Nie jestes zalogowany/a!");
                                 }
                                 break;
                             }
@@ -162,30 +156,17 @@ public class Server {
                                 try {
                                     handleSendConfirmations(data, session, output);
                                 } catch (IOException e) {
-                                    SendError(output, "Błąd IO.\n" + e.getLocalizedMessage(), new NetData(NetData.Operation.Unspecified));
+                                    SendError(output, "Błąd IO.\n" + e.getLocalizedMessage());
                                     throw new RuntimeException(e);
                                 } catch (SQLException e) {
-                                    SendError(output, "Błąd Bazy Danych.", new NetData(NetData.Operation.Unspecified));
+                                    SendError(output, "Błąd Bazy Danych.");
                                     throw new RuntimeException(e);
                                 }
                                 break;
                             }
-                            case CancelReservation:
+                            case ManageReservation:
                             {
-                                handleCancelReservation(data,session,output);
-                                break;
-                            }
-                            case ConfirmReservation:
-                            {
-                                try {
-                                    handleConfirmReservation(data,session,output);
-                                } catch (IOException e) {
-                                    SendError(output, "Błąd IO.\n" + e.getLocalizedMessage(), new NetData(NetData.Operation.Unspecified));
-                                    throw new RuntimeException(e);
-                                } catch (SQLException e) {
-                                    SendError(output, "Błąd Bazy Danych.", new NetData(NetData.Operation.Unspecified));
-                                    throw new RuntimeException(e);
-                                }
+                                handleManageReservation(data,session,output);
                                 break;
                             }
                             case ConfirmationsButton:
@@ -198,8 +179,7 @@ public class Server {
                                 break;
                         }
                     } catch (SQLException e) {
-                        NetData response = new NetData(NetData.Operation.Unspecified);
-                        SendError(output, "Blad polaczenia z baza danych.", response);
+                        SendError(output, "Blad polaczenia z baza danych.");
                     }
                 }
             }
@@ -231,85 +211,59 @@ public class Server {
         }
     }
 
-    private void handleConfirmReservation(NetData data, User session, ObjectOutputStream output) throws IOException, SQLException {
-        NetData err = new NetData(NetData.Operation.Unspecified);
+    private void handleManageReservation(NetData data, User session, ObjectOutputStream output) throws IOException {
         if (!session.isSignedIn || session.username.isEmpty()) {
-            SendError(output, "Nie jesteś zalogowany/a!", err);
+            SendError(output, "Nie jesteś zalogowany/a!");
             return;
         }
         if (!session.canManageReservations) {
-            SendError(output, "Nie masz uprawnień do usuwania ofert!", err);
+            SendError(output, "Nie masz uprawnień do zarządzania rezerwacjami!");
             return;
         }
-        if (data.Integers.size()==1) {
-            DatabaseHandler dbh = new DatabaseHandler();
-            if (!checkDBConnection(dbh, output)) {
-                return;
-            }
-            int id = data.Integers.get(0);
-            String query = "UPDATE wypozyczenie SET data_wypozyczenia = NOW() WHERE id_wypozyczenia = ?";
-            PreparedStatement preparedStatement = dbh.conn.prepareStatement(query);
-            preparedStatement.setInt(1, id);
-            int updated = preparedStatement.executeUpdate();
-            if (updated > 0) {
-                NetData response = new NetData(NetData.Operation.ConfirmReservation);
-                response.operationType = NetData.OperationType.Success;
-                output.writeObject(response);
-                output.flush();
+
+        ManageReservationRequest req = (ManageReservationRequest) data;
+
+        if (req.id != 0) {
+            if (req.confirm) {
+                handleReservationAction(req, "UPDATE wypozyczenie SET data_wypozyczenia = NOW() WHERE id_wypozyczenia = ?", "Błąd potwierdzania rezerwacji!", output);
             } else {
-                SendError(output, "Błąd potwierdzania rezerwacji!", err);
+                handleReservationAction(req, "DELETE FROM wypozyczenie WHERE id_wypozyczenia = ?", "Błąd usuwania rezerwacji!", output);
             }
-        }
-        else{
-            SendError(output, "Błąd przetwarzania żądania!", err);
+        } else {
+            SendError(output, "Błąd przetwarzania żądania!");
         }
     }
 
-    private void handleCancelReservation(NetData data, User session, ObjectOutputStream output) throws IOException {
-        NetData err = new NetData(NetData.Operation.Unspecified);
-        if (!session.isSignedIn || session.username.isEmpty()) {
-            SendError(output, "Nie jesteś zalogowany/a!", err);
-            return;
-        }
-        if (!session.canManageReservations) {
-            SendError(output, "Nie masz uprawnień do usuwania ofert!", err);
-            return;
-        }
-        if (data.Integers.size() == 1) {
-            DatabaseHandler dbh = new DatabaseHandler();
+    private void handleReservationAction(ManageReservationRequest req, String query, String errorMessage, ObjectOutputStream output) throws IOException {
+        try (DatabaseHandler dbh = new DatabaseHandler()) {
             if (!checkDBConnection(dbh, output)) {
                 return;
             }
-            int id = data.Integers.get(0);
-            String query = "DELETE FROM wypozyczenie WHERE id_wypozyczenia = ?";
-            try (PreparedStatement deleteStatement = dbh.conn.prepareStatement(query)) {
-                deleteStatement.setInt(1, id);
-                int res = deleteStatement.executeUpdate();
-                if (res > 0) {
-                    NetData response = new NetData(NetData.Operation.CancelReservation);
-                    response.operationType = NetData.OperationType.Success;
-                    output.writeObject(response);
+
+            try (PreparedStatement preparedStatement = dbh.conn.prepareStatement(query)) {
+                preparedStatement.setInt(1, req.id);
+                int result = preparedStatement.executeUpdate();
+                if (result > 0) {
+                    req.operationType = NetData.OperationType.Success;
+                    output.writeObject(req);
                     output.flush();
                 } else {
-                    SendError(output, "Błąd usuwania rezerwacji!", err);
+                    SendError(output, errorMessage);
                 }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
-
-        }else {
-            SendError(output, "Błąd przetwarzania żądania!", err);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
     private void handleSendConfirmations(NetData data, User session, ObjectOutputStream output) throws IOException, SQLException {
         NetData err = new NetData(NetData.Operation.Unspecified);
         if (!session.isSignedIn || session.username.isEmpty()) {
-            SendError(output, "Nie jesteś zalogowany/a!", err);
+            SendError(output, "Nie jesteś zalogowany/a!");
             return;
         }
         if (!session.canManageReservations) {
-            SendError(output, "Nie masz uprawnień do usuwania ofert!", err);
+            SendError(output, "Nie masz uprawnień do usuwania ofert!");
             return;
         }
         DatabaseHandler dbh = new DatabaseHandler();
@@ -341,7 +295,7 @@ public class Server {
         ResultSet results = dbh.executeQuery(query);
         while (results != null && results.next())
         {
-            NetData reservation = new NetData(NetData.Operation.ReservationElement);
+            ReservationElement reservation = new ReservationElement();
             int reserveId = results.getInt("id_wypozyczenia");
             int reserveDays = results.getInt("days");
             String marka = results.getString("marka");
@@ -354,17 +308,17 @@ public class Server {
             String nazwisko = results.getString("nazwisko");
             int numerTelefonu = results.getInt("numer_telefonu");
 
-            reservation.Integers.add(reserveId);
-            reservation.Integers.add(reserveDays);
-            reservation.Strings.add(marka);
-            reservation.Strings.add(model);
-            reservation.Integers.add(rokProd);
-            reservation.Integers.add(idAuta);
-            reservation.Floats.add(cenaZaDzien);
-            reservation.Strings.add(login);
-            reservation.Strings.add(imie);
-            reservation.Strings.add(nazwisko);
-            reservation.Integers.add(numerTelefonu);
+            reservation.reserveId = reserveId;
+            reservation.reserveDays = reserveDays;
+            reservation.brand = marka;
+            reservation.model = model;
+            reservation.productionYear = rokProd;
+            reservation.carId = idAuta;
+            reservation.dailyPrice = cenaZaDzien;
+            reservation.login = login;
+            reservation.firstName = imie;
+            reservation.lastName = nazwisko;
+            reservation.phoneNumber = numerTelefonu;
 
             output.writeObject(reservation);
             output.flush();
@@ -372,19 +326,17 @@ public class Server {
     }
 
     private void handleDeleteOffer(NetData data, User session, ObjectOutputStream output) throws IOException {
-        NetData res = new NetData(NetData.Operation.DeleteOffer);
         if (!session.isSignedIn || session.username.isEmpty()) {
-            SendError(output, "Nie jesteś zalogowany/a!", res);
+            SendError(output, "Nie jesteś zalogowany/a!");
             return;
         }
         if (!session.canDeleteOffers) {
-            SendError(output, "Nie masz uprawnień do usuwania ofert!", res);
+            SendError(output, "Nie masz uprawnień do usuwania ofert!");
             return;
         }
-
-        if (data.Integers.size() == 1) {
-            int offerIdToDelete = data.Integers.get(0);
-
+        DeleteOfferRequestPacket req=(DeleteOfferRequestPacket) data;
+        if (req.id != 0)
+        {
             try {
                 DatabaseHandler dbh = new DatabaseHandler();
                 if (!checkDBConnection(dbh, output)) {
@@ -393,7 +345,7 @@ public class Server {
 
                 String query = "SELECT zdjecie, wiekszeZdjecia FROM auta WHERE id_auta = ?";
                 try (PreparedStatement selectStatement = dbh.conn.prepareStatement(query)) {
-                    selectStatement.setInt(1, offerIdToDelete);
+                    selectStatement.setInt(1, req.id);
                     ResultSet resultSet = selectStatement.executeQuery();
 
                     if (resultSet.next()) {
@@ -402,7 +354,7 @@ public class Server {
 
                         query = "DELETE FROM auta WHERE id_auta = ?";
                         try (PreparedStatement deleteStatement = dbh.conn.prepareStatement(query)) {
-                            deleteStatement.setInt(1, offerIdToDelete);
+                            deleteStatement.setInt(1, req.id);
                             int rowsDeleted = deleteStatement.executeUpdate();
 
                             if (rowsDeleted > 0) {
@@ -443,97 +395,125 @@ public class Server {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-            SendError(output, "Nie można usunąć tej oferty lub oferta nie istnieje!", res);
+            SendError(output, "Nie można usunąć tej oferty lub oferta nie istnieje!");
         } else {
-            SendError(output, "Nieprawidłowe dane przesłane do usuwania oferty!", res);
+            SendError(output, "Nieprawidłowe dane przesłane do usuwania oferty!");
         }
     }
 
 
     private void handleAddOffer(NetData data, User session, ObjectOutputStream output) throws IOException {
-        NetData res = new NetData(NetData.Operation.AddOffer);
-        if (!session.isSignedIn || session.username.isEmpty())
-        {
-            SendError(output, "Nie jesteś zalogowany/a!", res);
+        VehiclePacket vp = (VehiclePacket) data;
+        if (!session.isSignedIn || session.username.isEmpty()) {
+            SendError(output, "Nie jesteś zalogowany/a!");
             return;
         }
-        if (!session.canAddOffers)
-        {
-            SendError(output, "Nie masz uprawnień do dodawania nowych ofert!", res);
+        System.out.println(1);
+        if (!session.canAddOffers) {
+            SendError(output, "Nie masz uprawnień do dodawania nowych ofert!");
             return;
         }
-        if (data.Strings.size() == 6)
-        {
-            if (data.Integers.size()==1 && data.Floats.size() == 1)
-            {
-                String thumbname = "user/" + session.username + "/" + data.Strings.get(4);
-                if (thumbname.length()>64)
-                {
-                    SendError(output, "Przekroczono maksymalna dlugosc znakow w miniaturce, sprobuj skrocic nazwe pliku!", res);
+        System.out.println(2);
+        if (!vp.isAnyRequiredEmpty()) {
+            String thumbname = "";
+            if (vp.thumbnail != null && vp.thumbnail.length>0) {
+                System.out.println(vp.thumbnailPath);
+                thumbname = "user/" + session.username + "/" + vp.thumbnailPath;
+                if (thumbname.length() > 64) {
+                    SendError(output, "Przekroczono maksymalna dlugosc znakow w miniaturce, sprobuj skrocic nazwe pliku!");
                     return;
                 }
-                URL thumburl = Server.class.getResource("/img/"+thumbname);
+                URL thumburl = Server.class.getResource("/img/" + thumbname);
                 //System.err.println("URL: " + thumburl);
-                if (Utilities.fileExists(thumburl))
-                {
-                    SendError(output, "Plik miniaturki o danej nazwie już istnieje!", res);
+                if (Utilities.fileExists(thumburl)) {
+                    SendError(output, "Plik miniaturki o danej nazwie już istnieje!");
                     return;
                 }
-                String dbPhotos = "";
-                String[] photosIndividual = null;
+            }
+            String dbPhotos = "";
+            String[] photosIndividual = null;
 
-                if (data.Strings.get(5) != null) {
-                    photosIndividual = data.Strings.get(5).split(";");
-                    for (String photo : photosIndividual) {
-                        String photoname = "user/" + session.username + "/" + photo;
-                        URL resourceUrl = Server.class.getResource("/img/" + photoname);
-                        if (Utilities.fileExists(resourceUrl)) {
-                            SendError(output, "Conajmniej jeden z przesłanych plików już istnieje!", res);
-                            return;
-                        }
-                        dbPhotos += photoname + ";";
-                    }
-
-                    dbPhotos = dbPhotos.trim();
-                    if (dbPhotos.endsWith(";")) {
-                        dbPhotos = dbPhotos.substring(0, dbPhotos.length() - 1);
-                    }
-                    if (dbPhotos.length() > 256) {
-                        SendError(output, "Przekroczono maksymalna dlugosc znakow w zdjeciach, sprobuj skrocic nazwy!", res);
+            if (!vp.imagePaths.isEmpty() && !vp.images.isEmpty()) {
+                photosIndividual = (String[]) vp.imagePaths.toArray();
+                for (String photo : photosIndividual) {
+                    String photoname = "user/" + session.username + "/" + photo;
+                    URL resourceUrl = Server.class.getResource("/img/" + photoname);
+                    if (Utilities.fileExists(resourceUrl)) {
+                        SendError(output, "Conajmniej jeden z przesłanych plików już istnieje!");
                         return;
                     }
+                    dbPhotos += photoname + ";";
                 }
-                DatabaseHandler dbh = new DatabaseHandler();
-                if (!checkDBConnection(dbh, output))
-                {
+
+                dbPhotos = dbPhotos.trim();
+                if (dbPhotos.endsWith(";")) {
+                    dbPhotos = dbPhotos.substring(0, dbPhotos.length() - 1);
+                }
+                if (dbPhotos.length() > 256) {
+                    SendError(output, "Przekroczono maksymalna dlugosc znakow w zdjeciach, sprobuj skrocic nazwy!");
                     return;
                 }
-                String query = "INSERT INTO auta (marka, model, rok_prod, silnik, zdjecie, opis, cenaZaDzien, wiekszeZdjecia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            }
+            DatabaseHandler dbh = new DatabaseHandler();
+            if (!checkDBConnection(dbh, output)) {
+                return;
+            }
+            String query = "INSERT INTO auta (marka, model, rok_prod, silnik, zdjecie, opis, cenaZaDzien, wiekszeZdjecia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-                try (PreparedStatement preparedStatement = dbh.conn.prepareStatement(query)) {
-                    preparedStatement.setString(1, data.Strings.get(0).trim());
-                    preparedStatement.setString(2, data.Strings.get(1).trim());
-                    preparedStatement.setInt(3, data.Integers.get(0));
-                    preparedStatement.setString(4, data.Strings.get(2).trim());
-                    preparedStatement.setString(5, thumbname);
-                    preparedStatement.setString(6, data.Strings.get(3).trim());
-                    preparedStatement.setFloat(7, data.Floats.get(0));
-                    preparedStatement.setString(8, dbPhotos);
-                    int queryres = preparedStatement.executeUpdate();
-                    if (queryres>0)
-                    {
-                        if (!data.Images.isEmpty()) {
-                            byte[] thumb = data.Images.get(0);
-                            data.Images.remove(0);
-                            if (thumb.length > 0)
-                            {
+            try (PreparedStatement preparedStatement = dbh.conn.prepareStatement(query)) {
+                preparedStatement.setString(1, vp.brand);
+                preparedStatement.setString(2, vp.model);
+                preparedStatement.setInt(3, vp.year);
+                preparedStatement.setString(4, vp.engine);
+                preparedStatement.setString(5, thumbname);
+                preparedStatement.setString(6, vp.description);
+                preparedStatement.setFloat(7, vp.price);
+                preparedStatement.setString(8, dbPhotos);
+                int queryres = preparedStatement.executeUpdate();
+                if (queryres > 0) {
+                    if (vp.thumbnail!=null) {
+                        byte[] thumb = vp.thumbnail;
+                        if (thumb.length > 0) {
+                            try {
+                                BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(thumb));
+
+                                String folderPath = ServerMain.imagePath + File.separator + "user/" + session.username;
+                                Path folder = Paths.get(folderPath);
+                                if (!Files.exists(folder)) {
+                                    try {
+                                        Files.createDirectories(folder);
+                                        System.out.println("Katalog został utworzony pomyślnie.");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                        System.err.println("Błąd podczas tworzenia katalogu.");
+                                    }
+                                }
+                                String imgPath = folderPath + File.separator + vp.thumbnailPath;
+
                                 try {
-                                    BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(thumb));
+                                    ImageIO.write(bufferedImage, "jpg", new File(imgPath));
+                                    System.out.println("Obraz został zapisany pomyślnie.");
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    System.err.println("Błąd podczas zapisywania obrazu.");
+                                }
 
-                                    String folderPath = ServerMain.imagePath + File.separator + "user/" + session.username;
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        if (photosIndividual != null && vp.images.size() == photosIndividual.length) {
+                            for (int i = 0; i < photosIndividual.length; i++) {
+                                String photoname = "user/" + session.username + "/" + photosIndividual[i];
+                                byte[] img = vp.images.get(i);
+                                if (img.length > 0) {
+                                    try {
+                                        BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(img));
+                                        String folderPath = ServerMain.imagePath + File.separator + "user/" + session.username;
+
                                         Path folder = Paths.get(folderPath);
                                         if (!Files.exists(folder)) {
-                                            // Katalog nie istnieje, więc próbujemy go utworzyć
                                             try {
                                                 Files.createDirectories(folder);
                                                 System.out.println("Katalog został utworzony pomyślnie.");
@@ -542,71 +522,34 @@ public class Server {
                                                 System.err.println("Błąd podczas tworzenia katalogu.");
                                             }
                                         }
-                                        String imgPath = folderPath + File.separator + data.Strings.get(4).trim();
 
-                                        try {
-                                            ImageIO.write(bufferedImage, "jpg", new File(imgPath));
-                                            System.out.println("Obraz został zapisany pomyślnie.");
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                            System.err.println("Błąd podczas zapisywania obrazu.");
-                                        }
+                                        String imgPath = folderPath + File.separator + photosIndividual[i];
 
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                            if (photosIndividual!=null && data.Images.size() == photosIndividual.length) {
-                                for (int i = 0; i < photosIndividual.length; i++) {
-                                    String photoname = "user/" + session.username + "/" + photosIndividual[i];
-                                    byte[] img = data.Images.get(i);
-                                    if (img.length > 0) {
-                                        try {
-                                            BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(img));
-                                            String folderPath = ServerMain.imagePath + File.separator + "user/" + session.username;
-
-                                            Path folder = Paths.get(folderPath);
-                                            if (!Files.exists(folder)) {
-                                                try {
-                                                    Files.createDirectories(folder);
-                                                    System.out.println("Katalog został utworzony pomyślnie.");
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                    System.err.println("Błąd podczas tworzenia katalogu.");
-                                                }
-                                            }
-
-                                            String imgPath = folderPath + File.separator + photosIndividual[i];
-
-                                            ImageIO.write(bufferedImage, "jpg", new File(imgPath));
-                                            System.out.println("Obraz został zapisany pomyślnie.");
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                            System.err.println("Błąd podczas zapisywania obrazu.");
-                                            SendError(output, "Błąd podczas zapisywania obrazu przez serwer.", res);
-                                        }
+                                        ImageIO.write(bufferedImage, "jpg", new File(imgPath));
+                                        System.out.println("Obraz został zapisany pomyślnie.");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                        System.err.println("Błąd podczas zapisywania obrazu.");
+                                        SendError(output, "Błąd podczas zapisywania obrazu przez serwer.");
                                     }
                                 }
-                            } else {
-                                System.out.println("Rozmiar zdjęć nieprawidłowy");
                             }
+                        } else {
+                            System.out.println("Rozmiar zdjęć nieprawidłowy");
                         }
-                        NetData newRes = new NetData(NetData.Operation.AddOffer);
-                        newRes.operationType= NetData.OperationType.Success;
-                        output.writeObject(newRes);
-                        output.flush();
                     }
-                    else
-                    {
-                        SendError(output,"Wystapil problem z dodawaniem ogloszenia.", res);
-                    }
-                } catch (SQLException e) {
-                    SendError(output,"Wystapil problem polaczenia z baza danych.", res);
-                    e.printStackTrace();
+                    NetData newRes = new NetData(NetData.Operation.AddOffer);
+                    newRes.operationType = NetData.OperationType.Success;
+                    output.writeObject(newRes);
+                    output.flush();
+                } else {
+                    SendError(output, "Wystapil problem z dodawaniem ogloszenia.");
                 }
-
+            } catch (SQLException e) {
+                SendError(output, "Wystapil problem polaczenia z baza danych.");
+                e.printStackTrace();
             }
+
         }
     }
 
@@ -645,7 +588,7 @@ public class Server {
             return resultSet.next();
         } catch (SQLException e) {
             e.printStackTrace();
-            SendError(output, "Blad bazy danych!", new NetData(NetData.Operation.Unspecified));
+            SendError(output, "Blad bazy danych!");
             return true;
         }
     }
@@ -653,16 +596,16 @@ public class Server {
     private void handleReservation(NetData data, User session, ObjectOutputStream output) {
         if (session != null && session.isSignedIn) {
             if (!session.canReserve) {
-                SendError(output, "Nie masz uprawnień do rezerwacji.", new NetData(NetData.Operation.ReservationRequest));
+                SendError(output, "Nie masz uprawnień do rezerwacji.");
                 return;
             }
-
+            ReservationRequestPacket resData = (ReservationRequestPacket)data;
             DatabaseHandler dbh = new DatabaseHandler();
             if (!checkDBConnection(dbh, output)) {
                 return;
             }
 
-            if (!reservationExists(data.Integers.get(0), output, dbh)) {
+            if (!reservationExists(resData.id, output, dbh)) {
                 System.out.println("Rezerwacja nie istnieje");
 
                 String query = "INSERT INTO wypozyczenie (`uzytkownicy_id_uzytkownika`, `auta_id_auta`, `days`)" +
@@ -670,14 +613,14 @@ public class Server {
                         " WHERE login = ?";
 
                 try (PreparedStatement insertStatement = dbh.conn.prepareStatement(query)) {
-                    insertStatement.setInt(1, data.Integers.get(0));
-                    insertStatement.setInt(2, data.Integers.get(1));
+                    insertStatement.setInt(1, resData.id);
+                    System.out.println("RESDATA ID: "+ resData.id);
+                    insertStatement.setInt(2, resData.days);
                     insertStatement.setString(3, session.username);
 
                     int res = insertStatement.executeUpdate();
-
                     if (res <= 0) {
-                        SendError(output, "Nie udało się zarezerwować pojazdu. Spróbuj ponownie później.", new NetData(NetData.Operation.ReservationRequest));
+                        SendError(output, "Nie udało się zarezerwować pojazdu. Spróbuj ponownie później.");
                     } else {
                         NetData response = new NetData(NetData.Operation.ReservationRequest);
                         response.operationType = NetData.OperationType.Success;
@@ -690,37 +633,33 @@ public class Server {
                     }
                 } catch (SQLException e) {
                     e.printStackTrace();
-                    SendError(output, "Błąd bazy danych!", new NetData(NetData.Operation.ReservationRequest));
+                    SendError(output, "Błąd bazy danych!");
                 } finally {
                     dbh.close();
                 }
             } else {
-                SendError(output, "Rezerwacja istnieje, albo wystąpił błąd połączenia z bazą danych.", new NetData(NetData.Operation.ReservationRequest));
+                SendError(output, "Rezerwacja istnieje, albo wystąpił błąd połączenia z bazą danych.");
             }
         } else {
-            NetData err = new NetData(NetData.Operation.Unspecified);
-            err.operationType = NetData.OperationType.Error;
-            err.Strings.add("Nie jesteś zalogowany/a!");
+            SendError(output,"Nie jesteś zalogowany/a!");
         }
     }
     private void handleOfferDetails(NetData data, User session, ObjectOutputStream output) {
-        if (data.Integers.size() == 1 && data.Integers.get(0) > 0) {
-            DatabaseHandler dbh = new DatabaseHandler();
-            int id = data.Integers.get(0);
 
+        OfferDetailsRequestPacket req = (OfferDetailsRequestPacket)data;
+        if (req.id > 0) {
+            DatabaseHandler dbh = new DatabaseHandler();
             if (!checkDBConnection(dbh, output)) {
                 return;
             }
-
             String query = "SELECT * FROM `auta` WHERE `id_auta` = ?";
-
             try (PreparedStatement statement = dbh.conn.prepareStatement(query)) {
-                statement.setInt(1, id);
+                statement.setInt(1, req.id);
 
                 ResultSet result = statement.executeQuery();
 
                 if (result.next()) {
-                    NetData response = new VehiclePacket();
+                    VehiclePacket response = new VehiclePacket();
                     response.operation= NetData.Operation.OfferDetails;
                     try {
                         String marka = result.getString("marka");
@@ -730,12 +669,14 @@ public class Server {
                         float cenaZaDzien = result.getFloat("cenaZaDzien");
                         String opis = result.getString("opis");
 
-                        response.
-                        response.Strings.add(marka + " " + model);
-                        response.Strings.add("Silnik: " + silnik + "\nRok produkcji: " + rokProdukcji + "\nCena za dzień: " + String.format("%.2f zł", cenaZaDzien) + "\n\n" + opis);
-                        response.Floats.add(cenaZaDzien);
-                        response.Integers.add(id);
-                        response.Booleans.add(session.isSignedIn && !session.username.isEmpty() && session.canDeleteOffers);
+                        response.brand=marka;
+                        response.model=model;
+                        response.engine=silnik;
+                        response.year=rokProdukcji;
+                        response.price=cenaZaDzien;
+                        response.description=opis;
+                        response.databaseId=req.id;
+                        response.canBeDeleted=session.isSignedIn && !session.username.isEmpty() && session.canDeleteOffers;
 
                         String imagesString = result.getString("wiekszeZdjecia");
                         if (imagesString != null && !imagesString.isEmpty()) {
@@ -743,7 +684,7 @@ public class Server {
                             for (String image : images) {
                                 byte[] img = Utilities.loadImageAsBytes(image, false);
                                 if (img.length > 0) {
-                                    response.Images.add(img);
+                                    response.images.add(img);
                                 }
                             }
                         }
@@ -846,43 +787,43 @@ public class Server {
             SendError(output, "Jesteś już zalogowany!");
             return;
         }
-        LoginPacket logdata = (LoginPacket)data;
+        LoginPacket logdata = (LoginPacket) data;
         if (logdata.login.isEmpty() || logdata.password.isEmpty()) {
             SendError(output, "Żadne pole nie może być puste!");
         }
 
-            String existsQuery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE BINARY `login` = ? AND BINARY password = ?";
-            DatabaseHandler dbh = new DatabaseHandler();
+        String existsQuery = "SELECT `id_uzytkownika` FROM `uzytkownicy` WHERE BINARY `login` = ? AND BINARY password = ?";
+        DatabaseHandler dbh = new DatabaseHandler();
 
-            try {
-                if (!checkDBConnection(dbh, output)) {
-                    return;
-                }
-
-                try (PreparedStatement existsStatement = dbh.conn.prepareStatement(existsQuery)) {
-                    existsStatement.setString(1, logdata.login);
-                    existsStatement.setString(2, logdata.password);
-
-                    ResultSet existing = existsStatement.executeQuery();
-                    if (existing.next()) {
-                        session.isSignedIn = true;
-                        session.username = logdata.login;
-                        fetchUserPermissions(session);
-                        NetData response = new NetData(NetData.Operation.Login);
-                        response.operationType = NetData.OperationType.Success;
-                        output.writeObject(response);
-                        output.flush();
-                    } else {
-                        SendError(output, "Nie udało się zalogować! Upewnij się, że dane są poprawne.");
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                SendError(output, "Błąd bazy danych!");
-            } finally {
-                dbh.close();
+        try {
+            if (!checkDBConnection(dbh, output)) {
+                return;
             }
+
+            try (PreparedStatement existsStatement = dbh.conn.prepareStatement(existsQuery)) {
+                existsStatement.setString(1, logdata.login);
+                existsStatement.setString(2, logdata.password);
+
+                ResultSet existing = existsStatement.executeQuery();
+                if (existing.next()) {
+                    session.isSignedIn = true;
+                    session.username = logdata.login;
+                    fetchUserPermissions(session);
+                    NetData response = new NetData(NetData.Operation.Login);
+                    response.operationType = NetData.OperationType.Success;
+                    output.writeObject(response);
+                    output.flush();
+                } else {
+                    SendError(output, "Nie udało się zalogować! Upewnij się, że dane są poprawne.");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            SendError(output, "Błąd bazy danych!");
+        } finally {
+            dbh.close();
         }
+
     }
     private void handleOfferUsername(ObjectOutputStream output, User session) throws IOException {
         UsernamePacket response = new UsernamePacket();

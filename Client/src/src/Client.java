@@ -4,6 +4,7 @@ import fxml.*;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.layout.HBox;
+import src.packets.*;
 
 import java.io.*;
 import java.net.ConnectException;
@@ -95,7 +96,7 @@ public class Client {
         System.out.println("DC");
     }
 
-    public void RequestAddOffer(String brand, String model, int year, String engine, float price, String desc, byte[] thumbnail, String thumbnailname, ArrayList<byte[]> images, String imagesnames)
+    public void RequestAddOffer(String brand, String model, int year, String engine, float price, String desc, byte[] thumbnail, String thumbnailname, ArrayList<byte[]> images, ArrayList<String> imagesnames)
     {
         if (brand.length()>32)
         {
@@ -112,47 +113,39 @@ public class Client {
             MessageBox("Silnik nie może być dłuższy niż 32 znaki.", Alert.AlertType.ERROR);
             return;
         }
-        if (engine.length()>32)
-        {
-            MessageBox("Silnik nie może być dłuższy niż 32 znaki.", Alert.AlertType.ERROR);
-            return;
-        }
-        NetData data = new NetData(NetData.Operation.AddOffer);
-        data.Strings.add(brand);
-        data.Strings.add(model);
-        data.Integers.add(year);
-        data.Strings.add(engine);
-        data.Floats.add(price);
-        data.Strings.add(desc);
-        data.Strings.add(thumbnailname);
-        data.Strings.add(imagesnames);
-        data.Images.add(thumbnail);
-        data.Images.addAll(images);
+        VehiclePacket data = new VehiclePacket();
+
+        data.brand = brand;
+        data.model = model;
+        data.year = year;
+        data.engine = engine;
+        data.price = price;
+        data.description = desc;
+        data.thumbnailPath = thumbnailname;
+        data.imagePaths = imagesnames;
+        data.thumbnail = thumbnail;
+        data.images.addAll(images);
+        data.databaseId=-1;
+        data.operation = NetData.Operation.AddOffer;
         SendRequest(data);
     }
     private void handleReceivedData(NetData data) throws IOException {
-        System.out.println("RECEIVED DATA");
-
+        //System.out.println("RECEIVED DATA");
         if (data.operationType == NetData.OperationType.Error) {
             handleErrorResponse(data);
-        } else if (data.operationType == NetData.OperationType.MessageBox) {
-            handleMessageBoxResponse(data);
         } else {
             handleOtherResponses(data);
         }
     }
 
     private void handleErrorResponse(NetData data) {
+        ErrorPacket ep = (ErrorPacket)data;
+        if (ep==null)return;
         if (data.operation == NetData.Operation.ReservationRequest && ReservationController.instance != null) {
             Platform.runLater(() -> ReservationController.instance.but_reserve.setVisible(true));
         }
-        MessageBox(data.Strings.get(0), Alert.AlertType.ERROR);
+        MessageBox(ep.ErrorMessage, Alert.AlertType.ERROR);
     }
-
-    private void handleMessageBoxResponse(NetData data) {
-        MessageBox(data.Strings.get(0), Alert.AlertType.INFORMATION);
-    }
-
     private void handleOtherResponses(NetData data) {
         switch (data.operation) {
             case NetData.Operation.Register:
@@ -188,11 +181,8 @@ public class Client {
             case NetData.Operation.ReservationElement:
                 handleReservationElementResponse(data);
                 break;
-            case NetData.Operation.ConfirmReservation:
-                handleConfirmReservationResponse(data);
-                break;
-            case NetData.Operation.CancelReservation:
-                handleCancelReservationResponse(data);
+            case NetData.Operation.ManageReservation:
+                    handleReservationManagementResponse(data);
                 break;
             case NetData.Operation.ConfirmationsButton:
                 handleConfirmButton(data);
@@ -205,14 +195,14 @@ public class Client {
 
     private void handleConfirmButton(NetData data)
     {
+        confirmButtonVisibility cbv = (confirmButtonVisibility)data;
+        if (cbv==null)return;
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
                 if (OffersController.instance!=null) {
                     HBox hbx = (HBox) OffersController.instance.confirmationsButton.getParent();
-                    if (!data.Booleans.isEmpty()) {
-                        OffersController.instance.confirmationsButton.setVisible(data.Booleans.get(0));
-                    }
+                    OffersController.instance.confirmationsButton.setVisible(cbv.isVisible);
                 }
             }
         });
@@ -223,52 +213,49 @@ public class Client {
         NetData req = new NetData(NetData.Operation.ConfirmationsButton);
         SendRequest(req);
     }
-    private void handleConfirmReservationResponse(NetData data) {
-        Platform.runLater(() -> {
-            if (confirmationController.instance != null) {
-                confirmationController.instance.Refresh();
-                MessageBox("Pomyślnie potwierdzono rezerwację.", Alert.AlertType.INFORMATION);
-            }
-        });
-    }
 
-    private void handleCancelReservationResponse(NetData data) {
+    private void handleReservationManagementResponse(NetData data) {
+        ManageReservationRequest mreq= (ManageReservationRequest)data;
+        if (mreq==null)return;
         Platform.runLater(() -> {
             if (confirmationController.instance != null) {
                 confirmationController.instance.Refresh();
-                MessageBox("Pomyślnie anulowano rezerwację.", Alert.AlertType.INFORMATION);
+                if (mreq.confirm)
+                    MessageBox("Pomyślnie potwierdzono rezerwację.", Alert.AlertType.INFORMATION);
+                else
+                    MessageBox("Pomyślnie anulowano rezerwację.", Alert.AlertType.INFORMATION);
             }
         });
     }
     private void handleRegisterResponse(NetData data) {
         if (data.operationType == NetData.OperationType.Success) {
             MessageBox("Zarejestrowano.", Alert.AlertType.INFORMATION);
-            Platform.runLater(() -> OffersController.openScene());
+            Platform.runLater(OffersController::openScene);
         }
     }
 
     private void handleLoginResponse(NetData data) {
         if (data.operationType == NetData.OperationType.Success) {
             MessageBox("Zalogowano.", Alert.AlertType.INFORMATION);
-            Platform.runLater(() -> OffersController.openScene());
+            Platform.runLater(OffersController::openScene);
         }
     }
 
     private void handleOfferUsernameResponse(NetData data) {
-        if (data.Strings.size() == 1) {
-            OffersController.setUsername(data.Strings.get(0).trim());
+        UsernamePacket up = (UsernamePacket) data;
+        if (up != null) {
+            OffersController.setUsername(up.username);
         }
     }
 
-    private void handleOfferElementResponse(NetData data) {
-        if (data.Strings.size() == 1 && data.Floats.size() == 1 && data.Integers.size() == 2
-                && (data.Images.size() == 1 || data.Images.isEmpty()) && data.Booleans.size() == 1) {
+    private void handleOfferElementResponse(NetData data)
+    {
+        VehiclePacket vp = (VehiclePacket) data;
+        if (vp!=null) {
             try {
-                byte[] imgs = data.Images.size() > 0 ? data.Images.get(0) : new byte[0];
-                boolean isRent = data.Booleans.get(0);
-                int daysLeft = data.Integers.get(1);
-                OffersController.AddOfferNode(data.Strings.get(0).trim(), data.Floats.get(0), imgs,
-                        data.Integers.get(0), isRent, daysLeft);
+                byte[] imgs = vp.thumbnail!=null ? vp.thumbnail : new byte[0];
+                OffersController.AddOfferNode(vp.brand + " " + vp.model + " (" + vp.year + ") " + vp.engine, vp.price, imgs,
+                        vp.databaseId, vp.isRented, vp.daysLeft);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 System.err.println("ERROR ADDING CAR");
@@ -277,30 +264,36 @@ public class Client {
     }
 
     private void handleOfferDetailsResponse(NetData data) {
-        if (data.Strings.size() == 2 && data.Floats.size() == 1 && data.Integers.size() == 1) {
-            if (OfferDetailsController.instance != null) {
-                OfferDetailsController.instance.SetHeader(data.Strings.get(0).trim());
-                OfferDetailsController.instance.SetDetails(data.Strings.get(1).trim());
-                OfferDetailsController.instance.price = data.Floats.get(0);
+        VehiclePacket vp = (VehiclePacket) data;
+        if (OfferDetailsController.instance != null) {
+            OfferDetailsController.instance.SetHeader(vp.brand + " " + vp.model);
+            OfferDetailsController.instance.SetDetails
+            (
+                vp.brand + " " + vp.model+"\n"+
+                        "Rok produkcji: " + vp.year+"\n"+
+                        "Silnik: " + vp.engine + "\n"+
+                        "Cena za dzień: " +String.format("%.2f", vp.price)+"\n"+
+                        vp.description
+            );
+            OfferDetailsController.instance.price = vp.price;
 
-                Platform.runLater(() -> {
-                    if (data.Booleans.isEmpty() || !data.Booleans.get(0)) {
-                        try {
-                            HBox btnpar = (HBox) OfferDetailsController.instance.deletebtn.getParent();
-                            btnpar.getChildren().remove(OfferDetailsController.instance.deletebtn);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    } else {
-                        OfferDetailsController.instance.deletebtn.setVisible(true);
+            Platform.runLater(() -> {
+                if (!vp.canBeDeleted) {
+                    try {
+                        HBox btnpar = (HBox) OfferDetailsController.instance.deletebtn.getParent();
+                        btnpar.getChildren().remove(OfferDetailsController.instance.deletebtn);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
                     }
-                });
-
-                for (byte[] img : data.Images) {
-                    OfferDetailsController.instance.AddImage(img);
+                } else {
+                    OfferDetailsController.instance.deletebtn.setVisible(true);
                 }
-                OfferDetailsController.instance.checkImage();
+            });
+
+            for (byte[] img : vp.images) {
+                OfferDetailsController.instance.AddImage(img);
             }
+            OfferDetailsController.instance.checkImage();
         }
     }
 
@@ -326,13 +319,12 @@ public class Client {
     }
 
     private void handleAddButtonResponse(NetData data) {
-        if (data.Booleans.size() == 1) {
-            Platform.runLater(() -> {
-                if (OffersController.instance != null) {
-                    OffersController.instance.addOfferButton.setVisible(data.Booleans.get(0));
-                }
-            });
-        }
+        addOfferButtonVisibility vis = (addOfferButtonVisibility) data;
+        Platform.runLater(() -> {
+            if (OffersController.instance != null) {
+                OffersController.instance.addOfferButton.setVisible(vis.isVisible);
+            }
+        });
     }
 
     private void handleAddOfferResponse(NetData data) {
@@ -358,26 +350,25 @@ public class Client {
     }
 
     private void handleReservationElementResponse(NetData data) {
+        ReservationElement element = (ReservationElement) data;
         Platform.runLater(() -> {
-            if (data.Strings.size() == 5 && data.Floats.size() == 1 && data.Integers.size() == 5) {
+            if (element!=null && element.carId!=0 && element.reserveId!=0) {
                 if (confirmationController.instance != null) {
-                    String text = "(" + data.Integers.get(0) + ") " + data.Strings.get(3) + " " + data.Strings.get(4) + " (" + data.Strings.get(2) + ", " + data.Integers.get(4) + ")\n";
-                    text += data.Strings.get(0) + " " + data.Strings.get(1) + " (" + data.Integers.get(2) + ", ID: " + data.Integers.get(3) + "), CZAS: " + data.Integers.get(1) + " dni, KOSZT: " + String.format("%.2f zł", data.Integers.get(1) * data.Floats.get(0)) + ".";
-                    confirmationController.instance.AddButton(text, data.Integers.get(0));
+                    String text = "(" + element.reserveId + ") " + element.firstName + " " + element.lastName + " (" + element.login + ", " + element.phoneNumber + ")\n";
+                    text += element.brand + " " + element.model + " (" + element.productionYear + ", ID: " + element.carId + "), CZAS: " + element.reserveDays + " dni, KOSZT: " + String.format("%.2f zł", element.reserveDays * element.dailyPrice) + ".";
+                    confirmationController.instance.AddButton(text, element.reserveId);
                 }
             }
         });
     }
     public void RequestCancelReservation(int id)
     {
-        NetData req = new NetData(NetData.Operation.CancelReservation);
-        req.Integers.add(id);
+        ManageReservationRequest req = new ManageReservationRequest(id,false);
         SendRequest(req);
     }
     public void RequestConfirmReservation(int id)
     {
-        NetData req = new NetData(NetData.Operation.ConfirmReservation);
-        req.Integers.add(id);
+        ManageReservationRequest req = new ManageReservationRequest(id,true);
         SendRequest(req);
     }
     public void RequestConfirmations()
@@ -387,33 +378,28 @@ public class Client {
     }
     public void RequestDelete(int id)
     {
-        NetData req = new NetData(NetData.Operation.DeleteOffer);
-        req.Integers.add(id);
+        DeleteOfferRequestPacket req = new DeleteOfferRequestPacket(id);
         SendRequest(req);
     }
     public void RequestReservation(int id, int days)
     {
-        NetData req = new NetData(NetData.Operation.ReservationRequest);
-        req.Integers.add(id);
-        req.Integers.add(days);
+        ReservationRequestPacket req = new ReservationRequestPacket(id,days);
         SendRequest(req);
     }
     public void RequestOffer(int id)
     {
-        System.out.println("Requesting OFFER");
-        NetData request = new NetData(NetData.Operation.OfferDetails);
-        request.Integers.add(id);
+        OfferDetailsRequestPacket request = new OfferDetailsRequestPacket(id);
         SendRequest(request);
     }
     public void RequestRegister(String username, String pwd, String pwdR, int phone, String imie, String nazwisko)
             throws DisconnectException {
-        NetData request = new NetData(NetData.Operation.Register);
-        request.Strings.add(username);// 0
-        request.Strings.add(MD5Encryptor.encryptPassword(pwd));// 1
-        request.Strings.add(MD5Encryptor.encryptPassword(pwdR));// 2
-        request.Integers.add(phone);// 0
-        request.Strings.add(imie);// 3
-        request.Strings.add(nazwisko);// 4
+        RegisterPacket request = new RegisterPacket();
+        request.login=username;
+        request.password = (MD5Encryptor.encryptPassword(pwd));
+        request.repeat_password = (MD5Encryptor.encryptPassword(pwdR));
+        request.phonenumber=phone;
+        request.imie=imie;
+        request.nazwisko=nazwisko;
         SendRequest(request);
     }
     public void SendLogout()
@@ -423,9 +409,7 @@ public class Client {
 
     }
     public void RequestLogin(String username, String pwd) {
-        NetData request = new NetData(NetData.Operation.Login);
-        request.Strings.add(username);// 0
-        request.Strings.add(MD5Encryptor.encryptPassword(pwd));// 1
+        LoginPacket request = new LoginPacket(username, MD5Encryptor.encryptPassword(pwd));
         SendRequest(request);
     }
 
@@ -439,7 +423,9 @@ public class Client {
         SendRequest(req);
     }
 
-    void SendRequest(NetData request) throws DisconnectException {
+    void SendRequest(Object request) throws DisconnectException {
+        if (!(request instanceof src.packets.NetData))
+            return;
         if (output != null && socket != null) {
             try {
                 output.writeObject(request);

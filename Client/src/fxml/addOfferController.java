@@ -46,7 +46,7 @@ public class addOfferController
     private Button thumbButton;
     private byte[] selectedThumbnail;
     private ArrayList<byte[]> selectedImages;
-    private String selectedImagesNames;
+    private ArrayList<String> selectedImagesNames = new ArrayList<>();
     private String selectedImageName;
 
     public static addOfferController openScene() {
@@ -124,17 +124,27 @@ public class addOfferController
 
             // Update your UI or perform additional processing as needed
             if (!selectedImages.isEmpty()) {
-                // For example, display the names of the selected files
-                StringBuilder fileList = new StringBuilder();
                 for (File selectedFile : selectedFiles) {
-                    fileList.append(selectedFile.getName()).append(";");
+                    selectedImagesNames.add(selectedFile.getName());
                 }
-                fileList.deleteCharAt(fileList.length() - 1); // Remove the last comma
+                String size = (" (" + Utilities.bytesFormatter(totalSize) + ")");
+                for (File selectedFile : selectedFiles) {
+                    String fileName = selectedFile.getName();
+                    final int MAX_CHARACTERS_PER_IMAGE = 20;
+                    if (fileName.length() > MAX_CHARACTERS_PER_IMAGE) {
+                        fileName = fileName.substring(0, MAX_CHARACTERS_PER_IMAGE - 3) + "...";
+                    }
+                    StringBuilder fileList = new StringBuilder();
 
-                selectedImagesNames = fileList.toString();
+                    if (fileList.length() + fileName.length() + 1 <= MAX_CHARACTERS_PER_IMAGE) {
+                        fileList.append(fileName).append(";");
+                    } else {
+                        imagesButton.setText(fileList.toString() + " " + Utilities.bytesFormatter(totalSize));
+                        fileList = new StringBuilder(fileName + ";");
 
-                String size = (" (" + Utilities.bytesFormatter(totalSize)+")");
-                imagesButton.setText(selectedImagesNames + size);
+                    }
+                    imagesButton.setText(fileList.toString() + " " + Utilities.bytesFormatter(totalSize));
+                }
             }
         } else {
             System.out.println("No files selected");

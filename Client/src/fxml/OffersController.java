@@ -47,38 +47,27 @@ public class OffersController {
         try {
             // Load the FXML file
             URL path = OffersController.class.getResource("/fxml/cars.fxml");
-            System.out.println("FXML Path: " + path);
-
             if (path == null) {
                 System.err.println("FXML file not found.");
                 return null;
             }
-
             FXMLLoader loader = new FXMLLoader(path);
             Parent root = loader.load();
 
-            // Create the scene
             Scene scene = new Scene(root, 1280, 720);
 
-            // Apply the CSS style
             URL cssPath = OffersController.class.getResource("/fxml/style1.css");
-            System.out.println("CSS Path: " + cssPath);
-
             if (cssPath != null) {
                 scene.getStylesheets().add(cssPath.toExternalForm());
             } else {
                 System.err.println("CSS file not found.");
             }
 
-            // Set the scene to the primary stage
             Stage primaryStage = WypozyczalniaOkno.getPrimaryStage();
             primaryStage.setScene(scene);
 
-            // Show the stage
             primaryStage.show();
-            // Return the controller instance if needed
             instance = loader.getController();
-            System.out.println(instance);
             instance.scene=scene;
             instance.StartScene();
             return instance;
