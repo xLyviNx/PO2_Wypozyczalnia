@@ -3,17 +3,7 @@
     <output-path>$PROJECT_DIR$/out/artifacts/Wypozyczalnia_jar</output-path>
     <root id="archive" name="Wypozyczalnia.jar">
       <element id="module-output" name="Wypozyczalnia" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/javafx-swt.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/javafx.base.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/javafx.controls.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/javafx.fxml.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/javafx.graphics.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/javafx.media.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/javafx.swing.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/src/lib/javafx.web.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/gson-2.10.1.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/mysql-connector-j-8.2.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/ojdbc11.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
