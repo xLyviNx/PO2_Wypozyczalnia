@@ -48,6 +48,8 @@ public class addOfferController
     private ArrayList<byte[]> selectedImages;
     private ArrayList<String> selectedImagesNames = new ArrayList<>();
     private String selectedImageName;
+    @FXML
+    private TextField enginecap;
 
     public static addOfferController openScene() {
         try {
@@ -194,6 +196,7 @@ public class addOfferController
             try {
                 int year = Integer.parseInt(rokprod.getText());
                 float price = Float.parseFloat(cena.getText());
+                int ecap = Integer.parseInt(enginecap.getText());
                 but_confirm.setVisible(false);
                 if (selectedImages== null)
                 {
@@ -201,7 +204,7 @@ public class addOfferController
                 }
                 if (selectedThumbnail==null)
                     selectedThumbnail=new byte[0];
-                Client.instance.RequestAddOffer(marka.getText(), model.getText(), year, silnik.getText(), price, opis.getText(), selectedThumbnail, selectedImageName, selectedImages, selectedImagesNames);
+                Client.instance.RequestAddOffer(marka.getText(), model.getText(), year, silnik.getText(), price, opis.getText(), selectedThumbnail, selectedImageName, selectedImages, selectedImagesNames, ecap);
             }
             catch (Exception ex)
             {

@@ -848,7 +848,7 @@ public class Server {
         }
         String loginUzytkownika = session.username;
         String query = "SELECT " +
-                "    a.`id_auta`, a.`marka`, a.`model`, a.`rok_prod`, a.`silnik`, a.`zdjecie`, a.`opis`, a.`cenaZaDzien`, " +
+                "    a.`id_auta`, a.`marka`, a.`model`, a.`rok_prod`, a.`silnik`, a.`zdjecie`, a.`opis`, a.`cenaZaDzien`, a.`pojemnosc`, " +
                 "    w.`data_wypozyczenia`, w.`days`, w.`id_wypozyczenia`," +
                 "    ABS(DATEDIFF(NOW(), IFNULL(w.`data_wypozyczenia`, NOW()) + INTERVAL IFNULL(w.`days`, 0) DAY)) AS dni_pozostale " +
                 "FROM " +
@@ -889,7 +889,7 @@ public class Server {
                 String silnik = result.getString("silnik");
                 int prod = result.getInt("rok_prod");
                 float cena = result.getFloat("cenaZaDzien");
-                String topText = marka + " " + model + " (" + prod + ") " + silnik;
+                int poj = result.getInt("pojemnosc");
 
                 response.brand=marka;
                 response.model=model;
@@ -897,7 +897,8 @@ public class Server {
                 response.year=prod;
                 response.price = cena;
                 response.databaseId=id;
-
+                if (!result.wasNull())
+                    response.engineCap=poj;
                 int idWypo = result.getInt("id_wypozyczenia");
                 if (!result.wasNull())
                 {

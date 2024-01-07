@@ -77,6 +77,19 @@
                                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                              </padding>
                                           </VBox>
+                                          <VBox layoutX="319.0" layoutY="10.0" HBox.hgrow="ALWAYS">
+                                             <children>
+                                                <Label text="Pojemność silnika (ccm)" VBox.vgrow="ALWAYS">
+                                                   <font>
+                                                      <Font size="18.0" />
+                                                   </font>
+                                                </Label>
+                                                <TextField fx:id="enginecap" promptText="Poj. silnika (ccm)" VBox.vgrow="ALWAYS" />
+                                             </children>
+                                             <padding>
+                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                             </padding>
+                                          </VBox>
                                        </children>
                                     </HBox>
                                     <HBox layoutX="15.0" layoutY="15.0" prefHeight="200.0" prefWidth="618.0">

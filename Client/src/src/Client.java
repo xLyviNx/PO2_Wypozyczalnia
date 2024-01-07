@@ -96,7 +96,7 @@ public class Client {
         System.out.println("DC");
     }
 
-    public void RequestAddOffer(String brand, String model, int year, String engine, float price, String desc, byte[] thumbnail, String thumbnailname, ArrayList<byte[]> images, ArrayList<String> imagesnames)
+    public void RequestAddOffer(String brand, String model, int year, String engine, float price, String desc, byte[] thumbnail, String thumbnailname, ArrayList<byte[]> images, ArrayList<String> imagesnames, int ecap)
     {
         if (brand.length()>32)
         {
@@ -127,6 +127,7 @@ public class Client {
         data.images.addAll(images);
         data.databaseId=-1;
         data.operation = NetData.Operation.AddOffer;
+        data.engineCap = ecap;
         SendRequest(data);
     }
     private void handleReceivedData(NetData data) throws IOException {
@@ -271,7 +272,7 @@ public class Client {
             (
                 vp.brand + " " + vp.model+"\n"+
                         "Rok produkcji: " + vp.year+"\n"+
-                        "Silnik: " + vp.engine + "\n"+
+                        "Silnik: " + vp.engine + ", (" + vp.engineCap + " ccm)\n"+
                         "Cena za dzień: " +String.format("%.2f", vp.price)+"\n"+
                         vp.description
             );

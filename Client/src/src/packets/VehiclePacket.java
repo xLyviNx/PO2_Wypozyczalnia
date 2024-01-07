@@ -22,6 +22,7 @@ public class VehiclePacket extends NetData implements Serializable
     public boolean canBeDeleted = false;
     public String thumbnailPath;
     public ArrayList<String> imagePaths;
+    public int engineCap;
     public boolean isAnyRequiredEmpty()
     {
         return brand.isEmpty()||model.isEmpty()||engine.isEmpty()||year==0||price==0||databaseId==0;
