@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sty 02, 2024 at 06:24 PM
--- Wersja serwera: 10.4.32-MariaDB
--- Wersja PHP: 8.0.30
+-- Generation Time: Sty 07, 2024 at 08:43 PM
+-- Wersja serwera: 10.4.28-MariaDB
+-- Wersja PHP: 8.2.4
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -36,8 +36,19 @@ CREATE TABLE `auta` (
   `zdjecie` varchar(64) DEFAULT NULL,
   `opis` varchar(512) DEFAULT NULL,
   `cenaZaDzien` decimal(10,2) DEFAULT NULL,
-  `wiekszeZdjecia` varchar(256) DEFAULT NULL
+  `wiekszeZdjecia` varchar(256) DEFAULT NULL,
+  `pojemnosc` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `auta`
+--
+
+INSERT INTO `auta` (`id_auta`, `marka`, `model`, `rok_prod`, `silnik`, `zdjecie`, `opis`, `cenaZaDzien`, `wiekszeZdjecia`, `pojemnosc`) VALUES
+(1, 'Toyota', 'Corolla', 2020, '1.8 Hybrid', 'user/admin/corolla1.jpg', 'Samochód hybrydowy z niskim zużyciem paliwa i dużą przestrzenią w kabinie.', 150.00, 'user/admin/corolla2.jpg;user/admin/corolla3.jpg', 1798),
+(2, 'Alfa Romeo', 'GT', 2004, '1.9 JTD', 'user/admin/alfa1.jpg', 'Alfa Romeo GT, Coupe Alfy Romeo w Dieslu (w tej wersji silnikowej)', 70.00, 'user/admin/alfa2.jpg', 1910),
+(3, 'Ford', 'Fiesta', 2019, '1.0 EcoBoost', 'user/admin/fiesta1.jpg', 'Mały, dynamiczny samochód miejski z niskim zużyciem paliwa.', 100.00, 'user/admin/fiesta2.jpg', 998),
+(4, 'Volkswagen', 'Golf', 2018, '1.5 TSI', 'user/admin/golftsi2.jpg', 'Klasyczny samochód kompaktowy z dobrym stosunkiem jakości do ceny.', 120.00, 'user/admin/golftsi3.jpg', 1498);
 
 -- --------------------------------------------------------
 
@@ -141,7 +152,7 @@ ALTER TABLE `wypozyczenie`
 -- AUTO_INCREMENT for table `auta`
 --
 ALTER TABLE `auta`
-  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_auta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `typy_uzytkownikow`
@@ -159,7 +170,7 @@ ALTER TABLE `uzytkownicy`
 -- AUTO_INCREMENT for table `wypozyczenie`
 --
 ALTER TABLE `wypozyczenie`
-  MODIFY `id_wypozyczenia` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_wypozyczenia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
 
 --
 -- Constraints for dumped tables

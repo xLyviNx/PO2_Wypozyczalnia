@@ -3,22 +3,19 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
+import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import src.Client;
-import javafx.scene.control.Label;
 import src.WypozyczalniaOkno;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 import javafx.scene.Parent;
-
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -26,20 +23,57 @@ import java.net.URL;
 public class OffersController {
     @FXML
     private FlowPane flow;
-    public Scene scene;
-    public static OffersController instance;
     @FXML
-    public Label label_user;
+    private VBox offerButtonTemplate;
+    @FXML
+    private HBox filtersbox;
+    @FXML
+    private Label label_user;
     @FXML
     public Button addOfferButton;
     @FXML
     public Button confirmationsButton;
+    @FXML
+    private Button refreshButton;
+    @FXML
+    private Button filterButton;
+    @FXML
+    private Button sortButton;
+    @FXML
+    private TextField priceMin;
+    @FXML
+    private TextField priceMax;
+    @FXML
+    private TextField yearMin;
+    @FXML
+    private TextField yearMax;
+    @FXML
+    private TextField capMin;
+    @FXML
+    private TextField capMax;
+    @FXML
+    private ToggleGroup brand;
+    @FXML
+    private Button SortChangeButton;
+    @FXML
+    public VBox filterBrandsParent;
+    public static OffersController instance;
+    public Scene scene;
+    private float priceMinValue = -1;
+    private float priceMaxValue = -1;
+    private int yearMinValue = -1;
+    private int yearMaxValue = -1;
+    private int engineCapMinValue = -1;
+    private int engineCapMaxValue = -1;
+    private String brandnameValue = null;
+    boolean priceDESC;
     public void StartScene()
     {
         if (Client.instance != null)
         {
             Client.instance.RequestUsername();
-            Client.instance.RequestOffers();
+            SortChangeButton.setText(priceDESC? "Aktualnie: Ceną w dół" : "Aktualnie: Ceną w górę");
+            Refresh();
             Client.instance.RequestConfButton();
         }
     }
@@ -103,6 +137,14 @@ public class OffersController {
         }
     }
 
+    public void AddFilterBrand(String brandname)
+    {
+        RadioButton rb = new RadioButton(brandname);
+        rb.setStyle("-fx-text-fill: white;");
+        rb.setToggleGroup(brand);
+        rb.setFont(new Font(15.0));
+        filterBrandsParent.getChildren().add(rb);
+    }
     private Node createOfferNode(String vehicleName, float price, byte[] imageBytes, int dbid, boolean isRent, int daysLeft) {
         VBox offerNode = new VBox();
         offerNode.getStyleClass().addAll( isRent? "offerButtonRent" : (daysLeft == -1? "offerButtonAwaiting" : "offerButton"));
@@ -177,12 +219,63 @@ public class OffersController {
     public void Refresh()
     {
         flow.getChildren().clear();
-        StartScene();
+        Client.instance.RequestOffers(brandnameValue, yearMinValue, yearMaxValue, engineCapMinValue, engineCapMaxValue, priceMinValue, priceMaxValue, priceDESC);
     }
     @FXML
     public void GoToConfirmations()
     {
         confirmationController.OpenScene();
+    }
+    @FXML
+    public void FilterButton()
+    {
+        filtersbox.setVisible(true);
+    }
+    @FXML
+    public void SortButton()
+    {
+
+        priceDESC = !priceDESC;
+        SortChangeButton.setText(priceDESC? "Aktualnie: Ceną w dół" : "Aktualnie: Ceną w górę");
+        Refresh();
+    }
+    @FXML
+    public void CancelFilter()
+    {
+        filtersbox.setVisible(false);
+    }
+    @FXML
+    public void ConfirmFilter()
+    {
+        priceMinValue = -1;
+        priceMaxValue = -1;
+        yearMinValue = -1;
+        yearMaxValue = -1;
+        engineCapMinValue = -1;
+        engineCapMaxValue = -1;
+        brandnameValue = null;
+        try {
+            if (brand.getSelectedToggle() != null)
+                brandnameValue = ((RadioButton) brand.getSelectedToggle()).getText();
+            if (!priceMin.getText().isEmpty())
+                priceMinValue = Float.parseFloat(priceMin.getText());
+            if (!priceMax.getText().isEmpty())
+                priceMaxValue = Float.parseFloat(priceMax.getText());
+            if (!yearMin.getText().isEmpty())
+                yearMinValue = Integer.parseInt(yearMin.getText());
+            if (!yearMax.getText().isEmpty())
+                yearMaxValue = Integer.parseInt(yearMax.getText());
+            if (!capMin.getText().isEmpty())
+                engineCapMinValue = Integer.parseInt(capMin.getText());
+            if (!capMax.getText().isEmpty())
+                engineCapMaxValue = Integer.parseInt(capMax.getText());
+        }
+        catch (Exception ex)
+        {
+            Client.MessageBox(ex.getLocalizedMessage(), Alert.AlertType.ERROR);
+        }
+        Refresh();
+        filtersbox.setVisible(false);
     }
 }
 

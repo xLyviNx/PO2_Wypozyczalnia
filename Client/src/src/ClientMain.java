@@ -79,7 +79,10 @@ public class ClientMain {
                 throw e;
             } catch (Exception ex)
             {
-
+                ex.printStackTrace();
+                Client.MessageBox(ex.getLocalizedMessage(), Alert.AlertType.ERROR);
+                if (WypozyczalniaOkno.instance != null)
+                    WypozyczalniaOkno.instance.NoConnection();
             }
         });
 

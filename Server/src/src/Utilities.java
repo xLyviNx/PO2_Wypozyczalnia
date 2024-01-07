@@ -26,8 +26,7 @@ public class Utilities
                 return new byte[0];
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            // Handle the exception (e.g., log it or return a default image)
+            System.err.println(e.getLocalizedMessage());
             return new byte[0];
         }
     }

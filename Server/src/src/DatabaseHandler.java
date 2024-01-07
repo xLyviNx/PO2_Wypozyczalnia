@@ -21,9 +21,9 @@ public class DatabaseHandler implements AutoCloseable {
         URL=makeURL(ip,port,dbname);
         USER=username;
         PASSWORD = password;
-        System.out.println(URL);
-        System.out.println(USER);
-        System.out.println(PASSWORD);
+        //System.out.println(URL);
+        //System.out.println(USER);
+        //System.out.println(PASSWORD);
     }
     public DatabaseHandler() {
         try {

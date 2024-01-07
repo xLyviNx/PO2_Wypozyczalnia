@@ -1,6 +1,5 @@
 package src;
 
-import com.mysql.cj.log.Log;
 import src.packets.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -14,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -105,8 +105,8 @@ public class Server {
                             case OfferUsername:
                                 handleOfferUsername(output, session);
                                 break;
-                            case OfferElement:
-                                handleOfferElement(output,session);
+                            case FilteredOffersRequest:
+                                handleOfferElement(data,output,session);
                                 break;
                             case OfferDetails:
                                 handleOfferDetails(data, session, output);
@@ -431,11 +431,12 @@ public class Server {
                 }
             }
             String dbPhotos = "";
-            String[] photosIndividual = null;
-
+            if (vp.engineCap<=0)
+            {
+                SendError(output, "Podano złą pojemność silnika!");
+            }
             if (!vp.imagePaths.isEmpty() && !vp.images.isEmpty()) {
-                photosIndividual = (String[]) vp.imagePaths.toArray();
-                for (String photo : photosIndividual) {
+                for (String photo : vp.imagePaths) {
                     String photoname = "user/" + session.username + "/" + photo;
                     URL resourceUrl = Server.class.getResource("/img/" + photoname);
                     if (Utilities.fileExists(resourceUrl)) {
@@ -458,8 +459,7 @@ public class Server {
             if (!checkDBConnection(dbh, output)) {
                 return;
             }
-            String query = "INSERT INTO auta (marka, model, rok_prod, silnik, zdjecie, opis, cenaZaDzien, wiekszeZdjecia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
+            String query = "INSERT INTO auta (marka, model, rok_prod, silnik, zdjecie, opis, cenaZaDzien, wiekszeZdjecia, pojemnosc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement preparedStatement = dbh.conn.prepareStatement(query)) {
                 preparedStatement.setString(1, vp.brand);
                 preparedStatement.setString(2, vp.model);
@@ -469,6 +469,7 @@ public class Server {
                 preparedStatement.setString(6, vp.description);
                 preparedStatement.setFloat(7, vp.price);
                 preparedStatement.setString(8, dbPhotos);
+                preparedStatement.setInt(9, vp.engineCap);
                 int queryres = preparedStatement.executeUpdate();
                 if (queryres > 0) {
                     if (vp.thumbnail!=null) {
@@ -503,9 +504,9 @@ public class Server {
                             }
                         }
 
-                        if (photosIndividual != null && vp.images.size() == photosIndividual.length) {
-                            for (int i = 0; i < photosIndividual.length; i++) {
-                                String photoname = "user/" + session.username + "/" + photosIndividual[i];
+                        if (vp.imagePaths != null && vp.images.size() == vp.imagePaths.size()) {
+                            for (int i = 0; i < vp.imagePaths.size(); i++) {
+                                String photoname = "user/" + session.username + "/" + vp.imagePaths.get(i);
                                 byte[] img = vp.images.get(i);
                                 if (img.length > 0) {
                                     try {
@@ -523,7 +524,7 @@ public class Server {
                                             }
                                         }
 
-                                        String imgPath = folderPath + File.separator + photosIndividual[i];
+                                        String imgPath = folderPath + File.separator + vp.imagePaths.get(i);
 
                                         ImageIO.write(bufferedImage, "jpg", new File(imgPath));
                                         System.out.println("Obraz został zapisany pomyślnie.");
@@ -535,7 +536,7 @@ public class Server {
                                 }
                             }
                         } else {
-                            System.out.println("Rozmiar zdjęć nieprawidłowy");
+                            System.out.println("Rozmiar zdjęć nieprawidłowy.\nIMG: " + vp.images.size() + "\nIMG PATHS: " + vp.imagePaths.size());
                         }
                     }
                     NetData newRes = new NetData(NetData.Operation.AddOffer);
@@ -666,6 +667,7 @@ public class Server {
                         String model = result.getString("model");
                         String silnik = result.getString("silnik");
                         int rokProdukcji = result.getInt("rok_prod");
+                        int poj = result.getInt("pojemnosc");
                         float cenaZaDzien = result.getFloat("cenaZaDzien");
                         String opis = result.getString("opis");
 
@@ -676,6 +678,7 @@ public class Server {
                         response.price=cenaZaDzien;
                         response.description=opis;
                         response.databaseId=req.id;
+                        response.engineCap=poj;
                         response.canBeDeleted=session.isSignedIn && !session.username.isEmpty() && session.canDeleteOffers;
 
                         String imagesString = result.getString("wiekszeZdjecia");
@@ -834,7 +837,7 @@ public class Server {
         output.writeObject(response);
         output.flush();
     }
-    private void handleOfferElement(ObjectOutputStream output, User session) {
+    private void handleOfferElement(NetData data, ObjectOutputStream output, User session) {
         try {
             addOfferButtonVisibility addBr = new addOfferButtonVisibility (session.canAddOffers);
             output.writeObject(addBr);
@@ -846,7 +849,9 @@ public class Server {
         if (!checkDBConnection(dbh, output)) {
             return;
         }
-        String loginUzytkownika = session.username;
+        FilteredOffersRequestPacket requestPacket = (FilteredOffersRequestPacket)data;
+        System.out.println("DESC? " + requestPacket.priceDESC);
+
         String query = "SELECT " +
                 "    a.`id_auta`, a.`marka`, a.`model`, a.`rok_prod`, a.`silnik`, a.`zdjecie`, a.`opis`, a.`cenaZaDzien`, a.`pojemnosc`, " +
                 "    w.`data_wypozyczenia`, w.`days`, w.`id_wypozyczenia`," +
@@ -871,16 +876,68 @@ public class Server {
                 "            w.`data_wypozyczenia` IS NULL " +
                 "            AND u.`login` = ? " +
                 "        ) " +
-                "    ) " +
-                "ORDER BY " +
-                "    a.`cenaZaDzien` ASC;";
+                "    ) ";
+        if (requestPacket.brand != null && !requestPacket.brand.isEmpty() && !requestPacket.brand.equals("KAŻDA")) {
+            query += "AND a.`marka` = ? ";
+        }
+
+        if (requestPacket.yearMin != -1) {
+            query += "AND a.`rok_prod` >= ? ";
+        }
+
+        if (requestPacket.yearMax != -1) {
+            query += "AND a.`rok_prod` <= ? ";
+        }
+
+        if (requestPacket.engineCapMin != -1) {
+            query += "AND a.`pojemnosc` >= ? ";
+        }
+
+        if (requestPacket.engineCapMax != -1) {
+            query += "AND a.`pojemnosc` <= ? ";
+        }
+
+        if (requestPacket.priceMin != -1) {
+            query += "AND a.`cenaZaDzien` >= ? ";
+        }
+
+        if (requestPacket.priceMax != -1) {
+            query += "AND a.`cenaZaDzien` <= ? ";
+        }
+        query += "ORDER BY a.`cenaZaDzien`" + (requestPacket.priceDESC ? "DESC" : "ASC") + ";";
         try {
             PreparedStatement preparedStatement = dbh.conn.prepareStatement(query);
-            preparedStatement.setString(1, loginUzytkownika);
-            preparedStatement.setString(2, loginUzytkownika);
+            preparedStatement.setString(1, session.username);
+            preparedStatement.setString(2, session.username);
+            int parameterIndex = 3;
+            if (requestPacket.brand != null && !requestPacket.brand.isEmpty() && !requestPacket.brand.equals("KAŻDA")) {
+                preparedStatement.setString(parameterIndex++, requestPacket.brand);
+            }
 
+            if (requestPacket.yearMin != -1) {
+                preparedStatement.setInt(parameterIndex++, requestPacket.yearMin);
+            }
+
+            if (requestPacket.yearMax != -1) {
+                preparedStatement.setInt(parameterIndex++, requestPacket.yearMax);
+            }
+
+            if (requestPacket.engineCapMin != -1) {
+                preparedStatement.setInt(parameterIndex++, requestPacket.engineCapMin);
+            }
+
+            if (requestPacket.engineCapMax != -1) {
+                preparedStatement.setInt(parameterIndex++, requestPacket.engineCapMax);
+            }
+
+            if (requestPacket.priceMin != -1) {
+                preparedStatement.setFloat(parameterIndex++, requestPacket.priceMin);
+            }
+
+            if (requestPacket.priceMax != -1) {
+                preparedStatement.setFloat(parameterIndex++, requestPacket.priceMax);
+            }
             ResultSet result = preparedStatement.executeQuery();
-
             while (result.next()) {
                 VehiclePacket response = new VehiclePacket();
                 int id = result.getInt("id_auta");
@@ -890,7 +947,6 @@ public class Server {
                 int prod = result.getInt("rok_prod");
                 float cena = result.getFloat("cenaZaDzien");
                 int poj = result.getInt("pojemnosc");
-
                 response.brand=marka;
                 response.model=model;
                 response.engine=silnik;
@@ -921,7 +977,7 @@ public class Server {
                         response.thumbnail=img;
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    System.err.println(ex.getLocalizedMessage());
                 }
                 output.writeObject(response);
                 output.flush();
@@ -932,6 +988,10 @@ public class Server {
                     throw new RuntimeException(e);
                 }*/
             }
+            BrandsList brands = new BrandsList();
+            brands.brands=getFilteredBrandsForOffers(requestPacket,session);
+            output.writeObject(brands);
+            output.flush();
         } catch (SQLException e) {
             e.printStackTrace();
             SendError(output, "Błąd bazy danych.");
@@ -939,7 +999,47 @@ public class Server {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+
         dbh.close();
+    }
+    private HashSet<String> getFilteredBrandsForOffers(FilteredOffersRequestPacket requestPacket, User session) {
+        HashSet<String> filteredBrands = new HashSet<>();
+
+        try (DatabaseHandler dbh = new DatabaseHandler()) {
+            String brandQuery = "SELECT DISTINCT a.`marka` FROM `auta` a " +
+                    "LEFT JOIN `wypozyczenie` w ON a.`id_auta` = w.`auta_id_auta` " +
+                    "LEFT JOIN `uzytkownicy` u ON w.`uzytkownicy_id_uzytkownika` = u.`id_uzytkownika` " +
+                    "WHERE " +
+                    "( " +
+                    "    w.`id_wypozyczenia` IS NULL " +
+                    "    OR ( " +
+                    "        w.`data_wypozyczenia` IS NOT NULL " +
+                    "        AND NOT (NOW() BETWEEN w.`data_wypozyczenia` AND DATE_ADD(w.`data_wypozyczenia`, INTERVAL w.`days` DAY)) " +
+                    "    ) " +
+                    "    OR ( " +
+                    "        u.`id_uzytkownika` IS NOT NULL " +
+                    "        AND u.`login` = ? " +
+                    "        AND (NOW() BETWEEN IFNULL(w.`data_wypozyczenia`, NOW()) AND DATE_ADD(IFNULL(w.`data_wypozyczenia`, NOW()), INTERVAL IFNULL(w.`days`, 0) DAY)) " +
+                    "    ) " +
+                    "    OR ( " +
+                    "        w.`data_wypozyczenia` IS NULL " +
+                    "        AND u.`login` = ? " +
+                    "    ) " +
+                    ") ";
+            PreparedStatement brandStatement = dbh.conn.prepareStatement(brandQuery);
+            brandStatement.setString(1, session.username);
+            brandStatement.setString(2, session.username);
+            ResultSet brandResult = brandStatement.executeQuery();
+
+            while (brandResult.next()) {
+                filteredBrands.add(brandResult.getString("marka"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return filteredBrands;
     }
     private void SendError(ObjectOutputStream output, String error) {
         if (output == null)

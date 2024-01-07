@@ -93,12 +93,11 @@ public class addOfferController
         
     }
     @FXML
-    public void imagesPress()
-    {
+    public void imagesPress() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPG Files", "*.jpg"));
 
-        // Show open file dialog
+        int MAX_CHARACTERS_PER_IMAGE = 15;
         List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
 
         if (selectedFiles != null && !selectedFiles.isEmpty()) {
@@ -110,48 +109,34 @@ public class addOfferController
 
             // Process the selected image files
             selectedImages = new ArrayList<>();
+            long totalSize = 0;
+            StringBuilder fileList = new StringBuilder();
 
-            long totalSize=0;
             for (File selectedFile : selectedFiles) {
                 System.out.println("Selected file: " + selectedFile.getAbsolutePath());
                 byte[] img = Utilities.loadImageAsBytes(selectedFile.getAbsolutePath());
 
                 if (img != null && img.length > 0 && img.length <= 2000000) {
                     selectedImages.add(img);
-                    totalSize+=img.length;
+
+                    // Update fileList
+                    if (fileList.length() > 0) {
+                        fileList.append(";");
+                    }
+                    fileList.append(selectedFile.getName());
+                    selectedImagesNames.add(selectedFile.getName());
+                    totalSize += img.length;
                 } else {
                     Client.MessageBox("Nie udało się odczytać pliku: " + selectedFile.getName(), Alert.AlertType.ERROR);
                 }
             }
 
-            // Update your UI or perform additional processing as needed
-            if (!selectedImages.isEmpty()) {
-                for (File selectedFile : selectedFiles) {
-                    selectedImagesNames.add(selectedFile.getName());
-                }
-                String size = (" (" + Utilities.bytesFormatter(totalSize) + ")");
-                for (File selectedFile : selectedFiles) {
-                    String fileName = selectedFile.getName();
-                    final int MAX_CHARACTERS_PER_IMAGE = 20;
-                    if (fileName.length() > MAX_CHARACTERS_PER_IMAGE) {
-                        fileName = fileName.substring(0, MAX_CHARACTERS_PER_IMAGE - 3) + "...";
-                    }
-                    StringBuilder fileList = new StringBuilder();
-
-                    if (fileList.length() + fileName.length() + 1 <= MAX_CHARACTERS_PER_IMAGE) {
-                        fileList.append(fileName).append(";");
-                    } else {
-                        imagesButton.setText(fileList.toString() + " " + Utilities.bytesFormatter(totalSize));
-                        fileList = new StringBuilder(fileName + ";");
-
-                    }
-                    imagesButton.setText(fileList.toString() + " " + Utilities.bytesFormatter(totalSize));
-                }
-            }
+            imagesButton.setText(fileList.toString() + " " + Utilities.bytesFormatter(totalSize));
         } else {
             System.out.println("No files selected");
         }
     }
+
     @FXML
     public void thumbnailPress() {
         FileChooser fileChooser = new FileChooser();
@@ -197,6 +182,7 @@ public class addOfferController
                 int year = Integer.parseInt(rokprod.getText());
                 float price = Float.parseFloat(cena.getText());
                 int ecap = Integer.parseInt(enginecap.getText());
+                System.out.println("1. ECAP: " + ecap);
                 but_confirm.setVisible(false);
                 if (selectedImages== null)
                 {

@@ -113,6 +113,7 @@ public class Client {
             MessageBox("Silnik nie może być dłuższy niż 32 znaki.", Alert.AlertType.ERROR);
             return;
         }
+
         VehiclePacket data = new VehiclePacket();
 
         data.brand = brand;
@@ -129,6 +130,7 @@ public class Client {
         data.operation = NetData.Operation.AddOffer;
         data.engineCap = ecap;
         SendRequest(data);
+
     }
     private void handleReceivedData(NetData data) throws IOException {
         //System.out.println("RECEIVED DATA");
@@ -149,51 +151,72 @@ public class Client {
     }
     private void handleOtherResponses(NetData data) {
         switch (data.operation) {
-            case NetData.Operation.Register:
+            case Register:
                 handleRegisterResponse(data);
                 break;
-            case NetData.Operation.Login:
+            case Login:
                 handleLoginResponse(data);
                 break;
-            case NetData.Operation.OfferUsername:
+            case OfferUsername:
                 handleOfferUsernameResponse(data);
                 break;
-            case NetData.Operation.OfferElement:
+            case OfferElement:
                 handleOfferElementResponse(data);
                 break;
-            case NetData.Operation.OfferDetails:
+            case OfferDetails:
                 handleOfferDetailsResponse(data);
                 break;
-            case NetData.Operation.Logout:
+            case Logout:
                 handleLogoutResponse(data);
                 break;
-            case NetData.Operation.ReservationRequest:
+            case ReservationRequest:
                 handleReservationRequestResponse(data);
                 break;
-            case NetData.Operation.addButton:
+            case addButton:
                 handleAddButtonResponse(data);
                 break;
-            case NetData.Operation.AddOffer:
+            case AddOffer:
                 handleAddOfferResponse(data);
                 break;
-            case NetData.Operation.DeleteOffer:
+            case DeleteOffer:
                 handleDeleteOfferResponse(data);
                 break;
-            case NetData.Operation.ReservationElement:
+            case ReservationElement:
                 handleReservationElementResponse(data);
                 break;
-            case NetData.Operation.ManageReservation:
-                    handleReservationManagementResponse(data);
+            case ManageReservation:
+                handleReservationManagementResponse(data);
                 break;
-            case NetData.Operation.ConfirmationsButton:
+            case ConfirmationsButton:
                 handleConfirmButton(data);
+                break;
+            case BrandsList:
+                handleBrandsList(data);
                 break;
             default:
                 // Handle unrecognized operation
                 break;
         }
     }
+    private void handleBrandsList(NetData data)
+    {
+        BrandsList blist = (BrandsList) data;
 
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                if (OffersController.instance != null) {
+                    OffersController.instance.filterBrandsParent.getChildren().clear();
+                    OffersController.instance.AddFilterBrand("KAŻDA");
+                    for (String br : blist.brands) {
+                        if(br.isEmpty()) continue;
+                        OffersController.instance.AddFilterBrand(br);
+                    }
+                }
+            }
+        });
+
+    }
     private void handleConfirmButton(NetData data)
     {
         confirmButtonVisibility cbv = (confirmButtonVisibility)data;
@@ -419,9 +442,9 @@ public class Client {
         SendRequest(req);
     }
 
-    public void RequestOffers() {
-        NetData req = new NetData(NetData.Operation.OfferElement);
-        SendRequest(req);
+    public void RequestOffers(String brand, int yearMin, int yearMax, int engineCapMin, int engineCapMax, float priceMin, float priceMax, boolean priceDESC) {
+        FilteredOffersRequestPacket request = new FilteredOffersRequestPacket(brand, yearMin, yearMax, engineCapMin, engineCapMax, priceMin, priceMax, priceDESC);
+        SendRequest(request);
     }
 
     void SendRequest(Object request) throws DisconnectException {
