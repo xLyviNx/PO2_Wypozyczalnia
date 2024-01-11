@@ -257,22 +257,62 @@ public class OffersController {
         try {
             if (brand.getSelectedToggle() != null)
                 brandnameValue = ((RadioButton) brand.getSelectedToggle()).getText();
-            if (!priceMin.getText().isEmpty())
-                priceMinValue = Float.parseFloat(priceMin.getText());
-            if (!priceMax.getText().isEmpty())
-                priceMaxValue = Float.parseFloat(priceMax.getText());
-            if (!yearMin.getText().isEmpty())
-                yearMinValue = Integer.parseInt(yearMin.getText());
-            if (!yearMax.getText().isEmpty())
-                yearMaxValue = Integer.parseInt(yearMax.getText());
-            if (!capMin.getText().isEmpty())
-                engineCapMinValue = Integer.parseInt(capMin.getText());
-            if (!capMax.getText().isEmpty())
-                engineCapMaxValue = Integer.parseInt(capMax.getText());
-        }
-        catch (Exception ex)
-        {
-            Client.MessageBox(ex.getLocalizedMessage(), Alert.AlertType.ERROR);
+
+            if (!priceMin.getText().isEmpty()) {
+                float parsedPriceMin = Float.parseFloat(priceMin.getText());
+                if (parsedPriceMin >= 0) {
+                    priceMinValue = parsedPriceMin;
+                } else {
+                    Client.MessageBox("Cena minimalna nie może być poniżej 0.", Alert.AlertType.ERROR);
+                }
+            }
+
+            if (!priceMax.getText().isEmpty()) {
+                float parsedPriceMax = Float.parseFloat(priceMax.getText());
+                if (parsedPriceMax >= 0) {
+                    priceMaxValue = parsedPriceMax;
+                } else {
+                    Client.MessageBox("Cena maksymalna nie może być poniżej 0.", Alert.AlertType.ERROR);
+                }
+            }
+
+            if (!yearMin.getText().isEmpty()) {
+                int parsedYearMin = Integer.parseInt(yearMin.getText());
+                if (parsedYearMin >= 0) {
+                    yearMinValue = parsedYearMin;
+                } else {
+                    Client.MessageBox("Rok minimalny nie może być poniżej 0.", Alert.AlertType.ERROR);
+                }
+            }
+
+            if (!yearMax.getText().isEmpty()) {
+                int parsedYearMax = Integer.parseInt(yearMax.getText());
+                if (parsedYearMax >= 0) {
+                    yearMaxValue = parsedYearMax;
+                } else {
+                    Client.MessageBox("Rok maksymalny nie może być poniżej 0.", Alert.AlertType.ERROR);
+                }
+            }
+
+            if (!capMin.getText().isEmpty()) {
+                int parsedEngineCapMin = Integer.parseInt(capMin.getText());
+                if (parsedEngineCapMin >= 0) {
+                    engineCapMinValue = parsedEngineCapMin;
+                } else {
+                    Client.MessageBox("Pojemność silnika minimalna nie może być poniżej 0.", Alert.AlertType.ERROR);
+                }
+            }
+
+            if (!capMax.getText().isEmpty()) {
+                int parsedEngineCapMax = Integer.parseInt(capMax.getText());
+                if (parsedEngineCapMax >= 0) {
+                    engineCapMaxValue = parsedEngineCapMax;
+                } else {
+                    Client.MessageBox("Pojemność silnika maksymalna nie może być poniżej 0.", Alert.AlertType.ERROR);
+                }
+            }
+        } catch (NumberFormatException ex) {
+            Client.MessageBox("Wprowadzono nieprawidłową wartość liczbową.", Alert.AlertType.ERROR);
         }
         Refresh();
         filtersbox.setVisible(false);

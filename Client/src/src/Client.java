@@ -51,7 +51,6 @@ public class Client {
                         output.flush();
                     } catch (SocketException socketexc) {
                         System.out.println("ERROR PINGING");
-                        socketexc.printStackTrace();
                         throw new DisconnectException();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
@@ -73,7 +72,6 @@ public class Client {
             System.out.println("Nie można połączyć się z serwerem: " + e.getMessage());
             throw new DisconnectException();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
             throw new DisconnectException();
         } finally {
             try {
