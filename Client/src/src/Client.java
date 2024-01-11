@@ -219,7 +219,7 @@ public class Client {
     }
     private void handleConfirmButton(NetData data)
     {
-        confirmButtonVisibility cbv = (confirmButtonVisibility)data;
+        ConfirmButtonVisibility cbv = (ConfirmButtonVisibility)data;
         if (cbv==null)return;
         Platform.runLater(new Runnable() {
             @Override
@@ -242,8 +242,8 @@ public class Client {
         ManageReservationRequest mreq= (ManageReservationRequest)data;
         if (mreq==null)return;
         Platform.runLater(() -> {
-            if (confirmationController.instance != null) {
-                confirmationController.instance.Refresh();
+            if (ConfirmationController.instance != null) {
+                ConfirmationController.instance.Refresh();
                 if (mreq.confirm)
                     MessageBox("Pomyślnie potwierdzono rezerwację.", Alert.AlertType.INFORMATION);
                 else
@@ -343,7 +343,7 @@ public class Client {
     }
 
     private void handleAddButtonResponse(NetData data) {
-        addOfferButtonVisibility vis = (addOfferButtonVisibility) data;
+        AddOfferButtonVisibility vis = (AddOfferButtonVisibility) data;
         Platform.runLater(() -> {
             if (OffersController.instance != null) {
                 OffersController.instance.addOfferButton.setVisible(vis.isVisible);
@@ -357,8 +357,8 @@ public class Client {
                 MessageBox("Dodano ofertę.", Alert.AlertType.INFORMATION);
                 OffersController.openScene();
             } else if (data.operationType == NetData.OperationType.Error) {
-                if (addOfferController.instance != null) {
-                    addOfferController.instance.but_confirm.setVisible(true);
+                if (AddOfferController.instance != null) {
+                    AddOfferController.instance.but_confirm.setVisible(true);
                 }
             }
         });
@@ -377,10 +377,10 @@ public class Client {
         ReservationElement element = (ReservationElement) data;
         Platform.runLater(() -> {
             if (element!=null && element.carId!=0 && element.reserveId!=0) {
-                if (confirmationController.instance != null) {
+                if (ConfirmationController.instance != null) {
                     String text = "(" + element.reserveId + ") " + element.firstName + " " + element.lastName + " (" + element.login + ", " + element.phoneNumber + ")\n";
                     text += element.brand + " " + element.model + " (" + element.productionYear + ", ID: " + element.carId + "), CZAS: " + element.reserveDays + " dni, KOSZT: " + String.format("%.2f zł", element.reserveDays * element.dailyPrice) + ".";
-                    confirmationController.instance.AddButton(text, element.reserveId);
+                    ConfirmationController.instance.AddButton(text, element.reserveId);
                 }
             }
         });

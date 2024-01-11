@@ -1,59 +1,49 @@
 package src;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseHandler implements AutoCloseable {
-    public static String URL = "";
-    public static String USER = "";
-    public static String PASSWORD = "";
+    private static String URL = "";
+    private static String USER = "";
+    private static String PASSWORD = "";
+
+    public static String makeURL(String ip, String port, String dbname) {
+        return "jdbc:mysql://" + ip + ":" + port + "/" + dbname;
+    }
+
+    public static void setCredentials(String ip, String port, String dbname, String username, String password) {
+        URL = makeURL(ip, port, dbname);
+        USER = username;
+        PASSWORD = password;
+    }
+
     public Connection conn;
     private Statement statement;
-    public static String makeURL(String ip, String port, String dbname)
-    {
-        return "jdbc:mysql://" + ip + ":" + port + "/"+dbname;
-    }
-    public static void setCredentials(String ip, String port, String dbname, String username, String password)
-    {
-        URL=makeURL(ip,port,dbname);
-        USER=username;
-        PASSWORD = password;
-        //System.out.println(URL);
-        //System.out.println(USER);
-        //System.out.println(PASSWORD);
-    }
+
     public DatabaseHandler() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(URL, USER, PASSWORD);
             statement = conn.createStatement();
-            //System.out.println("CONN: " + conn.isClosed());
         } catch (ClassNotFoundException | SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
-    public ResultSet executeQuery(String query) {
-        ResultSet resultSet = null;
-        try {
-            resultSet = statement.executeQuery(query);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return resultSet;
+    public ResultSet executeQuery(String query) throws SQLException {
+        return statement.executeQuery(query);
     }
 
-    public int executeUpdate(String query) {
-        int rowsAffected = 0;
-        try {
-            rowsAffected = statement.executeUpdate(query);
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public boolean executeUpdate(String query, PreparedStatementSetter preparedStatementSetter) throws SQLException {
+        try (PreparedStatement preparedStatement = conn.prepareStatement(query)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            int result = preparedStatement.executeUpdate();
+            return result > 0;
         }
-        return rowsAffected;
     }
 
     @Override
@@ -62,7 +52,6 @@ public class DatabaseHandler implements AutoCloseable {
             if (conn != null && !conn.isClosed()) {
                 conn.close();
             }
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

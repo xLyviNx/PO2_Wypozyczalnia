@@ -4,7 +4,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -21,13 +20,13 @@ import src.WypozyczalniaOkno;
 import java.io.IOException;
 import java.net.URL;
 
-public class confirmationController
+public class ConfirmationController
 {
-    public static confirmationController instance;
+    public static ConfirmationController instance;
     public Scene scene;
     @FXML
     private VBox container;  // Assuming you have an HBox with fx:id="container" in your FXML
-    public static confirmationController OpenScene()
+    public static ConfirmationController OpenScene()
     {
         try {
             URL path = OffersController.class.getResource("/fxml/confirmationPanel.fxml");

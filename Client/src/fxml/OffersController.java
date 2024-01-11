@@ -213,7 +213,7 @@ public class OffersController {
     @FXML
     public void AddOfferButton()
     {
-        addOfferController.openScene();
+        AddOfferController.openScene();
     }
     @FXML
     public void Refresh()
@@ -224,7 +224,7 @@ public class OffersController {
     @FXML
     public void GoToConfirmations()
     {
-        confirmationController.OpenScene();
+        ConfirmationController.OpenScene();
     }
     @FXML
     public void FilterButton()

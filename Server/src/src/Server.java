@@ -1,5 +1,6 @@
 package src;
 
+import src.DatabaseRepositories.ReservationRepository;
 import src.packets.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -14,22 +15,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
-    private volatile boolean closing = false;
-    private ExecutorService executor;
+    public volatile boolean closing = false;
+    public ExecutorService executor;
     public ArrayList<User> connectedClients = new ArrayList<>();
     private ServerSocket serverSocket;
 
     public void start(String ip, int port) throws IOException {
+        initializeServerSocket(port);
+        startConsoleThread();
+        acceptClientConnections();
+    }
+
+    private void initializeServerSocket(int port) throws IOException {
         serverSocket = new ServerSocket(port);
-        executor = Executors.newCachedThreadPool();
-        Thread console = new Thread(()->handleConsoleCommands(serverSocket));
+    }
+    private void startConsoleThread() {
+        ConsoleHandler consoleHandler = new ConsoleHandler(serverSocket,this);
+        Thread console = new Thread(consoleHandler);
         console.setDaemon(true);
         console.start();
+    }
+    private void acceptClientConnections() {
+        executor = Executors.newCachedThreadPool();
         while (true) {
             try {
                 if (!serverSocket.isClosed() && !closing) {
@@ -41,165 +52,129 @@ public class Server {
                     ex.printStackTrace();
                 }
             }
-            if (closing)
+            if (closing) {
                 break;
-        }
-        return;
-    }
-
-    private void handleConsoleCommands(ServerSocket serverSocket) {
-        System.out.println("Konsola jest aktywna.");
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            String command = scanner.nextLine();
-            switch (command.toLowerCase()) {
-                case "test":
-                    System.out.println("TEST");
-                    break;
-                case "exit":
-                case "stop":
-                    System.out.println("Zatrzymywanie serwera...");
-                    try {
-                        closing = true;
-                        executor.shutdown();
-                        serverSocket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return;
-                default:
-                    System.out.println("Nieznana komenda.");
             }
         }
     }
-
     private void handleClient(Socket socket) {
         User session = null;
         try (ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
              ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream())) {
             System.out.println("CLIENT CONNECTED " + socket);
-            session = new User();
-            session.isSignedIn = false;
-            session.clientSocket = socket;
-            connectedClients.add(session);
+            session = initializeSession(socket);
             while (true) {
                 NetData data = (NetData) input.readObject();
-
                 if (data.operation.equals(NetData.Operation.Exit)) {
-                    System.out.println("Client " + socket + " sends exit...");
-                    System.out.println("Connection closing...");
-                    socket.close();
-                    System.out.println("Closed");
-                    connectedClients.remove(session);
-                    session = null;
+                    handleExit(socket, output, session);
                     break;
                 } else if (!data.operation.equals(NetData.Operation.Ping)) {
                     try {
-                        switch (data.operation) {
-                            case Register:
-                                handleRegister(data, output, session);
-                                break;
-                            case Login:
-                                handleLogin(data, output, session);
-                                break;
-                            case OfferUsername:
-                                handleOfferUsername(output, session);
-                                break;
-                            case FilteredOffersRequest:
-                                handleOfferElement(data,output,session);
-                                break;
-                            case OfferDetails:
-                                handleOfferDetails(data, session, output);
-                                break;
-                            case Logout:
-                            {
-                                if (session.isSignedIn)
-                                {
-                                    try {
-                                        session.isSignedIn = false;
-                                        session.username = "";
-                                        NetData response = new NetData(NetData.Operation.Logout);
-                                        output.writeObject(response);
-                                        output.flush();
-                                    }catch(Exception ex)
-                                    {
-                                        ex.printStackTrace();
-                                    }
-                                }
-                                else{
-                                    SendError(output, "Nie jestes zalogowany/a!");
-                                }
-                                break;
-                            }
-                            case ReservationRequest:
-                            {
-                                handleReservation(data, session, output);
-                                break;
-                            }
-                            case AddOffer:
-                            {
-                                try {
-                                    handleAddOffer(data, session, output);
-                                }catch(Exception ex)
-                                {
-                                    ex.printStackTrace();
-                                }
-                                break;
-                            }
-                            case DeleteOffer:
-                            {
-                                handleDeleteOffer(data,session,output);
-                                break;
-                            }
-                            case RequestConfirmtations:
-                            {
-                                try {
-                                    handleSendConfirmations(data, session, output);
-                                } catch (IOException e) {
-                                    SendError(output, "Błąd IO.\n" + e.getLocalizedMessage());
-                                    throw new RuntimeException(e);
-                                } catch (SQLException e) {
-                                    SendError(output, "Błąd Bazy Danych.");
-                                    throw new RuntimeException(e);
-                                }
-                                break;
-                            }
-                            case ManageReservation:
-                            {
-                                handleManageReservation(data,session,output);
-                                break;
-                            }
-                            case ConfirmationsButton:
-                            {
-                                handleConfirmButton(data,session,output);
-                                break;
-                            }
-                            default:
-                                System.out.println(socket + " requested unknown operation.");
-                                break;
-                        }
+                        handleOperation(data, output, session);
                     } catch (SQLException e) {
                         SendError(output, "Blad polaczenia z baza danych.");
                     }
                 }
             }
         } catch (SocketException e) {
-            System.out.println("Client " + socket + " unexpectedly closed the connection.");
-            if (session != null) {
-                connectedClients.remove(session);
-                session = null;
-            }
+            handleUnexpectedClosure(socket, session);
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            if (session != null) {
-                connectedClients.remove(session);
-                session = null;
+            handleIOException(socket, session, e);
+        }
+    }
+
+    private User initializeSession(Socket socket) {
+        User session = new User();
+        session.isSignedIn = false;
+        session.clientSocket = socket;
+        connectedClients.add(session);
+        return session;
+    }
+
+    private void handleExit(Socket socket, ObjectOutputStream output, User session) throws IOException {
+        System.out.println("Client " + socket + " sends exit...");
+        System.out.println("Connection closing...");
+        socket.close();
+        System.out.println("Closed");
+        connectedClients.remove(session);
+    }
+
+    private void handleOperation(NetData data, ObjectOutputStream output, User session) throws SQLException, IOException {
+        switch (data.operation) {
+            case Register:
+                handleRegister(data, output, session);
+                break;
+            case Login:
+                handleLogin(data, output, session);
+                break;
+            case OfferUsername:
+                handleOfferUsername(output, session);
+                break;
+            case FilteredOffersRequest:
+                handleOfferElement(data, output, session);
+                break;
+            case OfferDetails:
+                handleOfferDetails(data, session, output);
+                break;
+            case Logout:
+                handleLogout(data, output, session);
+                break;
+            case ReservationRequest:
+                handleReservation(data, session, output);
+                break;
+            case AddOffer:
+                handleAddOffer(data, session, output);
+                break;
+            case DeleteOffer:
+                handleDeleteOffer(data, session, output);
+                break;
+            case RequestConfirmtations:
+                handleSendConfirmations(data, session, output);
+                break;
+            case ManageReservation:
+                handleManageReservation(data, session, output);
+                break;
+            case ConfirmationsButton:
+                handleConfirmButton(data, session, output);
+                break;
+            default:
+                System.out.println(session.clientSocket + " requested unknown operation.");
+                break;
+        }
+    }
+
+    private void handleLogout(NetData data, ObjectOutputStream output, User session) throws IOException {
+        if (session.isSignedIn) {
+            try {
+                session.isSignedIn = false;
+                session.username = "";
+                NetData response = new NetData(NetData.Operation.Logout);
+                output.writeObject(response);
+                output.flush();
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
+        } else {
+            SendError(output, "Nie jestes zalogowany/a!");
+        }
+    }
+
+    private void handleUnexpectedClosure(Socket socket, User session) {
+        System.out.println("Client " + socket + " unexpectedly closed the connection.");
+        if (session != null) {
+            connectedClients.remove(session);
+        }
+    }
+
+    private void handleIOException(Socket socket, User session, Exception e) {
+        e.printStackTrace();
+        if (session != null) {
+            connectedClients.remove(session);
         }
     }
 
     private void handleConfirmButton(NetData data, User session, ObjectOutputStream output) {
-        confirmButtonVisibility res = new confirmButtonVisibility(NetData.Operation.ConfirmationsButton, false);
+        ConfirmButtonVisibility res = new ConfirmButtonVisibility(NetData.Operation.ConfirmationsButton, false);
         if (session.isSignedIn && !session.username.isEmpty() && session.canManageReservations) {
             res.isVisible = true;
         }
@@ -212,63 +187,35 @@ public class Server {
     }
 
     private void handleManageReservation(NetData data, User session, ObjectOutputStream output) throws IOException {
-        if (!session.isSignedIn || session.username.isEmpty()) {
-            SendError(output, "Nie jesteś zalogowany/a!");
+        if (!session.hasPermission(data.operation)) {
+            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
             return;
         }
-        if (!session.canManageReservations) {
-            SendError(output, "Nie masz uprawnień do zarządzania rezerwacjami!");
-            return;
-        }
-
         ManageReservationRequest req = (ManageReservationRequest) data;
-
+        ReservationRepository reservationRepository = new ReservationRepository(new DatabaseHandler());
         if (req.id != 0) {
-            if (req.confirm) {
-                handleReservationAction(req, "UPDATE wypozyczenie SET data_wypozyczenia = NOW() WHERE id_wypozyczenia = ?", "Błąd potwierdzania rezerwacji!", output);
-            } else {
-                handleReservationAction(req, "DELETE FROM wypozyczenie WHERE id_wypozyczenia = ?", "Błąd usuwania rezerwacji!", output);
-            }
-        } else {
+            boolean success;
+            if (req.confirm)
+                success = reservationRepository.confirmReservation(req.id);
+            else
+                success = reservationRepository.deleteReservation(req.id);
+            if (success) {
+                req.operationType = NetData.OperationType.Success;
+                output.writeObject(req);
+                output.flush();
+            } else
+                SendError(output, "Błąd operacji!");
+        } else
             SendError(output, "Błąd przetwarzania żądania!");
-        }
-    }
-
-    private void handleReservationAction(ManageReservationRequest req, String query, String errorMessage, ObjectOutputStream output) throws IOException {
-        try (DatabaseHandler dbh = new DatabaseHandler()) {
-            if (!checkDBConnection(dbh, output)) {
-                return;
-            }
-
-            try (PreparedStatement preparedStatement = dbh.conn.prepareStatement(query)) {
-                preparedStatement.setInt(1, req.id);
-                int result = preparedStatement.executeUpdate();
-                if (result > 0) {
-                    req.operationType = NetData.OperationType.Success;
-                    output.writeObject(req);
-                    output.flush();
-                } else {
-                    SendError(output, errorMessage);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private void handleSendConfirmations(NetData data, User session, ObjectOutputStream output) throws IOException, SQLException {
-        NetData err = new NetData(NetData.Operation.Unspecified);
-        if (!session.isSignedIn || session.username.isEmpty()) {
-            SendError(output, "Nie jesteś zalogowany/a!");
-            return;
-        }
-        if (!session.canManageReservations) {
-            SendError(output, "Nie masz uprawnień do usuwania ofert!");
+        if (!session.hasPermission(data.operation)) {
+            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
             return;
         }
         DatabaseHandler dbh = new DatabaseHandler();
-        if (!checkDBConnection(dbh, output))
-        {
+        if (!checkDBConnection(dbh, output)) {
             return;
         }
         String query = "SELECT\n" +
@@ -293,8 +240,7 @@ public class Server {
                 "    wyp.data_wypozyczenia IS NULL;";
 
         ResultSet results = dbh.executeQuery(query);
-        while (results != null && results.next())
-        {
+        while (results != null && results.next()) {
             ReservationElement reservation = new ReservationElement();
             int reserveId = results.getInt("id_wypozyczenia");
             int reserveDays = results.getInt("days");
@@ -326,17 +272,12 @@ public class Server {
     }
 
     private void handleDeleteOffer(NetData data, User session, ObjectOutputStream output) throws IOException {
-        if (!session.isSignedIn || session.username.isEmpty()) {
-            SendError(output, "Nie jesteś zalogowany/a!");
+        if (!session.hasPermission(data.operation)) {
+            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
             return;
         }
-        if (!session.canDeleteOffers) {
-            SendError(output, "Nie masz uprawnień do usuwania ofert!");
-            return;
-        }
-        DeleteOfferRequestPacket req=(DeleteOfferRequestPacket) data;
-        if (req.id != 0)
-        {
+        DeleteOfferRequestPacket req = (DeleteOfferRequestPacket) data;
+        if (req.id != 0) {
             try {
                 DatabaseHandler dbh = new DatabaseHandler();
                 if (!checkDBConnection(dbh, output)) {
@@ -403,20 +344,14 @@ public class Server {
 
 
     private void handleAddOffer(NetData data, User session, ObjectOutputStream output) throws IOException {
+        if (!session.hasPermission(data.operation)) {
+            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
+            return;
+        }
         VehiclePacket vp = (VehiclePacket) data;
-        if (!session.isSignedIn || session.username.isEmpty()) {
-            SendError(output, "Nie jesteś zalogowany/a!");
-            return;
-        }
-        System.out.println(1);
-        if (!session.canAddOffers) {
-            SendError(output, "Nie masz uprawnień do dodawania nowych ofert!");
-            return;
-        }
-        System.out.println(2);
         if (!vp.isAnyRequiredEmpty()) {
             String thumbname = "";
-            if (vp.thumbnail != null && vp.thumbnail.length>0) {
+            if (vp.thumbnail != null && vp.thumbnail.length > 0) {
                 System.out.println(vp.thumbnailPath);
                 thumbname = "user/" + session.username + "/" + vp.thumbnailPath;
                 if (thumbname.length() > 64) {
@@ -431,8 +366,7 @@ public class Server {
                 }
             }
             String dbPhotos = "";
-            if (vp.engineCap<=0)
-            {
+            if (vp.engineCap <= 0) {
                 SendError(output, "Podano złą pojemność silnika!");
             }
             if (!vp.imagePaths.isEmpty() && !vp.images.isEmpty()) {
@@ -472,7 +406,7 @@ public class Server {
                 preparedStatement.setInt(9, vp.engineCap);
                 int queryres = preparedStatement.executeUpdate();
                 if (queryres > 0) {
-                    if (vp.thumbnail!=null) {
+                    if (vp.thumbnail != null) {
                         byte[] thumb = vp.thumbnail;
                         if (thumb.length > 0) {
                             try {
@@ -554,10 +488,8 @@ public class Server {
         }
     }
 
-    private void fetchUserPermissions(User session)
-    {
-        if (session.isSignedIn)
-        {
+    private void fetchUserPermissions(User session) {
+        if (session.isSignedIn) {
             DatabaseHandler dbh = new DatabaseHandler();
             if (!checkDBConnection(dbh, null))
                 return;
@@ -565,8 +497,7 @@ public class Server {
             try (PreparedStatement selectStatement = dbh.conn.prepareStatement(query)) {
                 selectStatement.setString(1, session.username);
                 ResultSet rsS = selectStatement.executeQuery();
-                while (rsS.next())
-                {
+                while (rsS.next()) {
                     session.canReserve = rsS.getBoolean("wypozyczauto");
                     session.canAddOffers = rsS.getBoolean("dodajogloszenia");
                     session.canDeleteOffers = rsS.getBoolean("usunogloszenie");
@@ -579,6 +510,7 @@ public class Server {
             }
         }
     }
+
     private boolean reservationExists(int id, ObjectOutputStream output, DatabaseHandler dbh) {
         String query = "SELECT * FROM wypozyczenie " +
                 "WHERE id_wypozyczenia = ? AND (data_wypozyczenia IS NULL OR (data_wypozyczenia IS NOT NULL AND NOW() BETWEEN data_wypozyczenia AND DATE_ADD(data_wypozyczenia, INTERVAL days DAY)))";
@@ -595,54 +527,49 @@ public class Server {
     }
 
     private void handleReservation(NetData data, User session, ObjectOutputStream output) {
-        if (session != null && session.isSignedIn) {
-            if (!session.canReserve) {
-                SendError(output, "Nie masz uprawnień do rezerwacji.");
-                return;
-            }
-            ReservationRequestPacket resData = (ReservationRequestPacket)data;
-            DatabaseHandler dbh = new DatabaseHandler();
-            if (!checkDBConnection(dbh, output)) {
-                return;
-            }
 
-            if (!reservationExists(resData.id, output, dbh)) {
-                System.out.println("Rezerwacja nie istnieje");
+        if (!session.hasPermission(data.operation)) {
+            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
+            return;
+        }
+        ReservationRequestPacket resData = (ReservationRequestPacket) data;
+        DatabaseHandler dbh = new DatabaseHandler();
+        if (!checkDBConnection(dbh, output)) {
+            return;
+        }
 
-                String query = "INSERT INTO wypozyczenie (`uzytkownicy_id_uzytkownika`, `auta_id_auta`, `days`)" +
-                        " SELECT id_uzytkownika, ?, ? FROM uzytkownicy" +
-                        " WHERE login = ?";
+        if (!reservationExists(resData.id, output, dbh)) {
+            System.out.println("Rezerwacja nie istnieje");
 
-                try (PreparedStatement insertStatement = dbh.conn.prepareStatement(query)) {
-                    insertStatement.setInt(1, resData.id);
-                    System.out.println("RESDATA ID: "+ resData.id);
-                    insertStatement.setInt(2, resData.days);
-                    insertStatement.setString(3, session.username);
+            String query = "INSERT INTO wypozyczenie (`uzytkownicy_id_uzytkownika`, `auta_id_auta`, `days`)" +
+                    " SELECT id_uzytkownika, ?, ? FROM uzytkownicy" +
+                    " WHERE login = ?";
 
-                    int res = insertStatement.executeUpdate();
-                    if (res <= 0) {
-                        SendError(output, "Nie udało się zarezerwować pojazdu. Spróbuj ponownie później.");
-                    } else {
-                        NetData response = new NetData(NetData.Operation.ReservationRequest);
-                        response.operationType = NetData.OperationType.Success;
-                        try {
-                            output.writeObject(response);
-                            output.flush();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+            try (PreparedStatement insertStatement = dbh.conn.prepareStatement(query)) {
+                insertStatement.setInt(1, resData.id);
+                insertStatement.setInt(2, resData.days);
+                insertStatement.setString(3, session.username);
+                int res = insertStatement.executeUpdate();
+                if (res <= 0) {
+                    SendError(output, "Nie udało się zarezerwować pojazdu. Spróbuj ponownie później.");
+                } else {
+                    NetData response = new NetData(NetData.Operation.ReservationRequest);
+                    response.operationType = NetData.OperationType.Success;
+                    try {
+                        output.writeObject(response);
+                        output.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    SendError(output, "Błąd bazy danych!");
-                } finally {
-                    dbh.close();
                 }
-            } else {
-                SendError(output, "Rezerwacja istnieje, albo wystąpił błąd połączenia z bazą danych.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                SendError(output, "Błąd bazy danych!");
+            } finally {
+                dbh.close();
             }
         } else {
-            SendError(output,"Nie jesteś zalogowany/a!");
+            SendError(output, "Rezerwacja istnieje, albo wystąpił błąd połączenia z bazą danych.");
         }
     }
     private void handleOfferDetails(NetData data, User session, ObjectOutputStream output) {
@@ -839,7 +766,7 @@ public class Server {
     }
     private void handleOfferElement(NetData data, ObjectOutputStream output, User session) {
         try {
-            addOfferButtonVisibility addBr = new addOfferButtonVisibility (session.canAddOffers);
+            AddOfferButtonVisibility addBr = new AddOfferButtonVisibility(session.canAddOffers);
             output.writeObject(addBr);
             output.flush();
         } catch (IOException e) {
@@ -1089,4 +1016,15 @@ class User {
     boolean canDeleteOffers = false;
     boolean canReserve = false;
     boolean canManageReservations = false;
+    public boolean hasPermission(NetData.Operation operation) {
+        if (!isSignedIn || username.isEmpty())
+            return false;
+        return switch (operation) {
+            case AddOffer -> canAddOffers;
+            case DeleteOffer -> canDeleteOffers;
+            case ReservationRequest -> canReserve;
+            case RequestConfirmtations, ManageReservation -> canManageReservations;
+            default -> false;
+        };
+    }
 }

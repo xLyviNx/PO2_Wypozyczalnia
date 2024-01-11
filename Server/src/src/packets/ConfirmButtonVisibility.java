@@ -2,10 +2,10 @@ package src.packets;
 
 import java.io.Serial;
 import java.io.Serializable;
-public class confirmButtonVisibility extends src.packets.NetData implements Serializable
+public class ConfirmButtonVisibility extends src.packets.NetData implements Serializable
 {    @Serial
 private static final long serialVersionUID = 3L; // Dowolna liczba, możesz użyć generatora
-    public confirmButtonVisibility(Operation op, boolean vis) {
+    public ConfirmButtonVisibility(Operation op, boolean vis) {
         super(op);
         isVisible=vis;
     }

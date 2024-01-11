@@ -17,9 +17,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class addOfferController
+public class AddOfferController
 {
-    public static addOfferController instance;
+    public static AddOfferController instance;
     public Scene scene;
 
     @FXML
@@ -51,7 +51,7 @@ public class addOfferController
     @FXML
     private TextField enginecap;
 
-    public static addOfferController openScene() {
+    public static AddOfferController openScene() {
         try {
             URL path = OffersController.class.getResource("/fxml/addOffer.fxml");
             if (path == null) {
