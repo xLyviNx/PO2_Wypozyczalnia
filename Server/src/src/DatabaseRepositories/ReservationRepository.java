@@ -32,13 +32,15 @@ public class ReservationRepository {
         }
     }
     public void makeReservation(String username, int vehicleId, int days) throws SQLException {
-        String query = "INSERT INTO wypozyczenie (`uzytkownicy_id_uzytkownika`, `auta_id_auta`, `days)`" +
-                " SELECT id_uzytkownika, ?, ? FROM uzytkownicy WHERE login = ?";
+        String query = "INSERT INTO wypozyczenie (`uzytkownicy_id_uzytkownika`, `auta_id_auta`, `days`)" +
+                " SELECT id_uzytkownika, ?, ? FROM uzytkownicy" +
+                " WHERE login = ?";
 
         try (PreparedStatement insertStatement = dbh.conn.prepareStatement(query)) {
             insertStatement.setInt(1, vehicleId);
             insertStatement.setInt(2, days);
             insertStatement.setString(3, username);
+
             int res = insertStatement.executeUpdate();
             if (res <= 0) {
                 throw new SQLException("Nie udało się zarezerwować pojazdu. Spróbuj ponownie później.");
@@ -47,14 +49,13 @@ public class ReservationRepository {
     }
 
     public boolean reservationExists(int id) {
-        String query = "SELECT id_wypozyczenia FROM wypozyczenie WHERE id_wypozyczenia = ?";
-
+        String query = "SELECT id_wypozyczenia FROM wypozyczenie WHERE auta_id_auta = ?";
         try (PreparedStatement selectStatement = dbh.conn.prepareStatement(query)) {
             selectStatement.setInt(1, id);
             ResultSet resultSet = selectStatement.executeQuery();
-
-            return resultSet.next(); // Zwraca true, jeśli rezerwacja istnieje, w przeciwnym razie false
+            return resultSet.next();
         } catch (SQLException e) {
+            e.printStackTrace();
             return true;
         }
     }
