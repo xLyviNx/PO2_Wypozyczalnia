@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import javafx.scene.image.ImageView;
 import javafx.beans.value.ChangeListener;
+import src.packets.VehiclePacket;
 
 public class OfferDetailsController
 {
@@ -235,5 +236,45 @@ public class OfferDetailsController
     public void rezerwuj(MouseEvent mouseEvent)
     {
         ReservationController.openScene(carname.getText(), carid, price);
+    }
+
+    public void handleOfferDetailsResponse(VehiclePacket vp) {
+        updateHeaderAndDetails(vp);
+        updateDeleteButtonVisibility(vp);
+        addImages(vp.images);
+        checkImage();
+    }
+
+    public void updateHeaderAndDetails(VehiclePacket vp) {
+        String header = vp.brand + " " + vp.model;
+        String details = String.format("%s\nRok produkcji: %s\nSilnik: %s, (%s ccm)\nCena za dzień: %s\n%s",
+                header, vp.year, vp.engine, vp.engineCap, String.format("%.2f", vp.price), vp.description);
+
+        Platform.runLater(() -> {
+            SetHeader(header);
+            SetDetails(details);
+            price = vp.price;
+        });
+    }
+
+    public void updateDeleteButtonVisibility(VehiclePacket vp) {
+        Platform.runLater(() -> {
+            if (!vp.canBeDeleted) {
+                try {
+                    HBox btnpar = (HBox) deletebtn.getParent();
+                    btnpar.getChildren().remove(deletebtn);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            } else {
+                deletebtn.setVisible(true);
+            }
+        });
+    }
+
+    public void addImages(ArrayList<byte[]> images) {
+        for (byte[] img : images) {
+            AddImage(img);
+        }
     }
 }

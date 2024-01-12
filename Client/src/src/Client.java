@@ -20,48 +20,18 @@ public class Client {
     private ObjectOutputStream output;
 
     public void start(String address, int port) throws Exception {
-        if (instance != null && instance != this)
+        if (isInstanceAlreadyRunning()) {
             return;
-
-        while (WypozyczalniaOkno.instance == null) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(300);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
         }
-        //System.out.println("WINDOW FOUND");
+
+        waitForWindowInstance();
+
         try {
-            instance = this;
-            socket = new Socket(address, port);
-            output = new ObjectOutputStream(socket.getOutputStream());
-            input = new ObjectInputStream(socket.getInputStream());
+            initializeSocket(address, port);
+            startPingThread();
 
-            String receivedString;
-
-            Thread pings = new Thread(() -> {
-                while (socket.isConnected() && WypozyczalniaOkno.instance != null) {
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException iex) {
-                        throw new RuntimeException(iex);
-                    }
-                    try {
-                        output.writeObject(new NetData(NetData.Operation.Ping));
-                        output.flush();
-                    } catch (SocketException socketexc) {
-                        System.out.println("ERROR PINGING");
-                        throw new DisconnectException();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-            pings.start();
-
-            while (socket.isConnected() && WypozyczalniaOkno.instance != null) {
-                NetData data = (NetData) input.readObject();
-
+            while (socket.isConnected() && isWindowInstanceAvailable()) {
+                NetData data = receiveData();
                 if (data != null) {
                     handleReceivedData(data);
                 }
@@ -69,30 +39,103 @@ public class Client {
 
             System.out.println("DISCONNECTED.");
         } catch (ConnectException e) {
-            System.out.println("Nie można połączyć się z serwerem: " + e.getMessage());
-            throw new DisconnectException();
+            handleConnectionException(e);
         } catch (IOException | ClassNotFoundException e) {
             throw new DisconnectException();
         } finally {
-            try {
-                if (input != null) {
-                    input.close();
-                }
-                if (output != null) {
-                    output.close();
-                }
-                if (socket != null) {
-                    socket.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            closeResources();
+            resetInstance();
         }
 
-        if (instance == this)
-            instance = null;
         System.out.println("DC");
     }
+
+    private boolean isInstanceAlreadyRunning() {
+        return instance != null && instance != this;
+    }
+
+    private void waitForWindowInstance() {
+        while (WypozyczalniaOkno.instance == null) {
+            sleep(300);
+        }
+    }
+
+    private void initializeSocket(String address, int port) throws IOException {
+        instance = this;
+        socket = new Socket(address, port);
+        output = new ObjectOutputStream(socket.getOutputStream());
+        input = new ObjectInputStream(socket.getInputStream());
+    }
+
+    private void startPingThread() {
+        Thread pings = new Thread(() -> {
+            while (socket.isConnected() && isWindowInstanceAvailable()) {
+                sleep(1000);
+                try {
+                    sendPing();
+                } catch (SocketException socketExc) {
+                    handlePingError(socketExc);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        pings.start();
+    }
+
+    private void sleep(long millis) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean isWindowInstanceAvailable() {
+        return WypozyczalniaOkno.instance != null;
+    }
+
+    private void sendPing() throws IOException {
+        output.writeObject(new NetData(NetData.Operation.Ping));
+        output.flush();
+    }
+
+    private void handlePingError(SocketException socketExc) {
+        System.out.println("ERROR PINGING");
+        throw new DisconnectException();
+    }
+
+    private NetData receiveData() throws IOException, ClassNotFoundException {
+        return (NetData) input.readObject();
+    }
+
+    private void handleConnectionException(ConnectException e) {
+        System.out.println("Nie można połączyć się z serwerem: " + e.getMessage());
+        throw new DisconnectException();
+    }
+
+    private void closeResources() {
+        closeQuietly(input);
+        closeQuietly(output);
+        closeQuietly(socket);
+    }
+
+    private void closeQuietly(Closeable closeable) {
+        try {
+            if (closeable != null) {
+                closeable.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void resetInstance() {
+        if (instance == this) {
+            instance = null;
+        }
+    }
+
 
     public void RequestAddOffer(String brand, String model, int year, String engine, float price, String desc, byte[] thumbnail, String thumbnailname, ArrayList<byte[]> images, ArrayList<String> imagesnames, int ecap)
     {
@@ -192,14 +235,12 @@ public class Client {
                 handleBrandsList(data);
                 break;
             default:
-                // Handle unrecognized operation
                 break;
         }
     }
     private void handleBrandsList(NetData data)
     {
         BrandsList blist = (BrandsList) data;
-
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
@@ -286,38 +327,18 @@ public class Client {
     }
 
     private void handleOfferDetailsResponse(NetData data) {
-        VehiclePacket vp = (VehiclePacket) data;
-        if (OfferDetailsController.instance != null) {
-            OfferDetailsController.instance.SetHeader(vp.brand + " " + vp.model);
-            OfferDetailsController.instance.SetDetails
-            (
-                vp.brand + " " + vp.model+"\n"+
-                        "Rok produkcji: " + vp.year+"\n"+
-                        "Silnik: " + vp.engine + ", (" + vp.engineCap + " ccm)\n"+
-                        "Cena za dzień: " +String.format("%.2f", vp.price)+"\n"+
-                        vp.description
-            );
-            OfferDetailsController.instance.price = vp.price;
-
-            Platform.runLater(() -> {
-                if (!vp.canBeDeleted) {
-                    try {
-                        HBox btnpar = (HBox) OfferDetailsController.instance.deletebtn.getParent();
-                        btnpar.getChildren().remove(OfferDetailsController.instance.deletebtn);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                } else {
-                    OfferDetailsController.instance.deletebtn.setVisible(true);
-                }
-            });
-
-            for (byte[] img : vp.images) {
-                OfferDetailsController.instance.AddImage(img);
-            }
-            OfferDetailsController.instance.checkImage();
+        if (OfferDetailsController.instance == null) {
+            return;
         }
+
+        VehiclePacket vp = (VehiclePacket) data;
+        OfferDetailsController offerDetailsController = OfferDetailsController.instance;
+        offerDetailsController.updateHeaderAndDetails(vp);
+        offerDetailsController.updateDeleteButtonVisibility(vp);
+        offerDetailsController.addImages(vp.images);
+        offerDetailsController.checkImage();
     }
+
 
     private void handleLogoutResponse(NetData data) {
         Platform.runLater(() -> {

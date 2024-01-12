@@ -329,10 +329,10 @@ public class Server {
         OfferDetailsRequestPacket req = (OfferDetailsRequestPacket) data;
         if (req.id > 0) {
             DatabaseHandler dbh = new DatabaseHandler();
-            if (!checkDBConnection(dbh, output)) {
-                return;
-            }
-            try {
+            try (dbh) {
+                if (!checkDBConnection(dbh, output)) {
+                    return;
+                }
                 OfferRepository offerRepository = new OfferRepository(dbh);
                 VehiclePacket response = offerRepository.getOfferDetails(req.id, session);
                 if (response != null) {
@@ -344,8 +344,6 @@ public class Server {
             } catch (SQLException | IOException e) {
                 e.printStackTrace();
                 SendError(output, "Błąd przetwarzania zapytania o ofertę.");
-            } finally {
-                dbh.close();
             }
         } else {
             SendError(output, "Nieprawidłowe dane zapytania.");
@@ -409,8 +407,8 @@ public class Server {
             SendError(output, "Żadne pole nie może być puste!");
         }
         DatabaseHandler dbh = new DatabaseHandler();
-        UserRepository userRepository = new UserRepository(dbh);
-        try {
+        try (dbh) {
+            UserRepository userRepository = new UserRepository(dbh);
             if (!checkDBConnection(dbh, output)) {
                 return;
             }
@@ -426,8 +424,6 @@ public class Server {
             } else {
                 SendError(output, "Nie udało się zalogować! Upewnij się, że dane są poprawne.");
             }
-        } finally {
-            dbh.close();
         }
     }
     private void handleOfferUsername(ObjectOutputStream output, User session) throws IOException {
