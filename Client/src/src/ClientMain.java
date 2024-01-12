@@ -43,19 +43,9 @@ public class ClientMain {
             ip = args[0];
             port = Integer.parseInt(args[1].trim());
             runClient();
-
             final WypozyczalniaOkno mainStage = new WypozyczalniaOkno();
             WypozyczalniaOkno.instance = mainStage;
             mainStage.init();
-
-            Platform.startup(() -> {
-                Stage stage = new Stage();
-                try {
-                    mainStage.start(stage);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
         } catch (Exception ex) {
             ex.printStackTrace();
         }
