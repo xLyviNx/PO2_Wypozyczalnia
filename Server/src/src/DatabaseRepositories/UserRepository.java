@@ -1,7 +1,6 @@
 package src.DatabaseRepositories;
-
-import src.DatabaseHandler;
-import src.User;
+import org.projektpo2.DatabaseHandler;
+import org.projektpo2.User;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

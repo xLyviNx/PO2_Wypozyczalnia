@@ -1,10 +1,9 @@
 package src.DatabaseRepositories;
 
-import src.*;
-import src.packets.FilteredOffersRequestPacket;
-import src.packets.NetData;
-import src.packets.VehiclePacket;
-
+import org.projektpo2.*;
+import org.projektpo2.packets.FilteredOffersRequestPacket;
+import org.projektpo2.packets.NetData;
+import org.projektpo2.packets.VehiclePacket;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -56,9 +55,11 @@ public class OfferRepository {
 
     private void deleteImages(String thumbnail, String[] photos) {
         String folderPath = ServerMain.imagePath;
-
-        deleteImageIfExists(folderPath + thumbnail);
+        if (!thumbnail.isEmpty())
+            deleteImageIfExists(folderPath + thumbnail);
         for (String photo : photos) {
+            if (photo.isEmpty())
+                continue;
             deleteImageIfExists(folderPath + photo);
         }
     }
@@ -68,7 +69,7 @@ public class OfferRepository {
             Files.deleteIfExists(Paths.get(filePath));
             System.out.println("File deleted successfully: " + filePath);
         } catch (IOException e) {
-            System.err.println("Unable to delete the file " + filePath + ": " + e.getMessage());
+            System.err.println("Unable to delete the image " + filePath + ": " + e.getMessage());
         }
     }
 
@@ -129,7 +130,9 @@ public class OfferRepository {
     }
 
     private void saveImages(byte[] image, String imagePath, String username) {
-        if (image != null) {
+        System.out.println(image);
+        if (image != null && image.length>0 && imagePath!=null)
+        {
             saveImage(image, "user/" + username + "/" + imagePath, username);
         }
     }

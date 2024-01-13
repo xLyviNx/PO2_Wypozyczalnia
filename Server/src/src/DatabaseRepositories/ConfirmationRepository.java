@@ -1,7 +1,7 @@
 package src.DatabaseRepositories;
 
-import src.DatabaseHandler;
-import src.packets.ReservationElement;
+import org.projektpo2.DatabaseHandler;
+import org.projektpo2.packets.ReservationElement;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

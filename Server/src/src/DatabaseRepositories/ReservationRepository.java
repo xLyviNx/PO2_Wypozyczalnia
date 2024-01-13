@@ -1,8 +1,6 @@
 package src.DatabaseRepositories;
 
-import src.DatabaseHandler;
-
-import java.io.ObjectOutputStream;
+import org.projektpo2.DatabaseHandler;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,6 +11,7 @@ public class ReservationRepository {
     public ReservationRepository(DatabaseHandler dbh) {
         this.dbh = dbh;
     }
+
 
     public boolean confirmReservation(int reservationId) {
         String query = "UPDATE wypozyczenie SET data_wypozyczenia = NOW() WHERE id_wypozyczenia = ?";
