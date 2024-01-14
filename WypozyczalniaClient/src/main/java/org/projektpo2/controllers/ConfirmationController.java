@@ -15,26 +15,33 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.projektpo2.Client;
+import org.projektpo2.Utilities;
 import org.projektpo2.WypozyczalniaOkno;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.logging.Logger;
-
-public class ConfirmationController
-{
-    private static final Logger logger = Logger.getLogger(AddOfferController.class.getName());
+import java.util.logging.*;
+/**
+ * Kontroler potwierdzeń rezerwacji.
+ */
+public class ConfirmationController {
+    private static final Logger logger = Utilities.getLogger(ConfirmationController.class);
 
     public static ConfirmationController instance;
     public Scene scene;
     @FXML
-    private VBox container;  // Assuming you have an HBox with fx:id="container" in your FXML
-    public static ConfirmationController OpenScene()
-    {
+    private VBox container;
+
+    /**
+     * Otwiera scenę potwierdzeń rezerwacji.
+     *
+     * @return Instancja kontrolera sceny potwierdzeń rezerwacji.
+     */
+    public static ConfirmationController OpenScene() {
         try {
             URL path = OffersController.class.getResource("/org/projektpo2/fxml/confirmationPanel.fxml");
             if (path == null) {
-                System.err.println("FXML file not found.");
+                logger.log(Level.SEVERE, "FXML file not found.");
                 return null;
             }
             FXMLLoader loader = new FXMLLoader(path);
@@ -44,36 +51,41 @@ public class ConfirmationController
             if (cssPath != null) {
                 scene.getStylesheets().add(cssPath.toExternalForm());
             } else {
-                System.err.println("CSS file not found (Confirmations).");
+                logger.log(Level.WARNING, "CSS file not found (Confirmations).");
             }
             Stage primaryStage = WypozyczalniaOkno.getPrimaryStage();
             primaryStage.setScene(scene);
             primaryStage.show();
             instance = loader.getController();
-            System.out.println(instance);
+            logger.info("Scene opened: " + instance);
             instance.scene = scene;
             instance.StartScene();
             return instance;
         } catch (IOException e) {
-            System.err.println("Error loading FXML file: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error loading FXML file: " + e.getMessage(), e);
         } catch (RuntimeException e) {
-            System.err.println("Runtime error during FXML loading: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Runtime error during FXML loading: " + e.getMessage(), e);
         } catch (Exception e) {
-            System.err.println("Unknown error during FXML loading.");
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Unknown error during FXML loading.", e);
         }
         return null;
     }
 
-    public void StartScene()
-    {
-        if (Client.instance != null)
-        {
+    /**
+     * Inicjuje scenę potwierdzeń rezerwacji.
+     */
+    public void StartScene() {
+        if (Client.instance != null) {
             Client.instance.RequestConfirmations();
         }
     }
+
+    /**
+     * Dodaje przycisk potwierdzenia rezerwacji do interfejsu.
+     *
+     * @param content Treść przycisku.
+     * @param id      Identyfikator rezerwacji.
+     */
     public void AddButton(String content, int id) {
         HBox entryBox = new HBox();
         entryBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
@@ -83,14 +95,11 @@ public class ConfirmationController
         entryBox.getStyleClass().add("offerButtonBar");
 
         entryBox.setPrefHeight(Region.USE_COMPUTED_SIZE);
-        // Ustawienie paddingu dla HBox
         entryBox.setPadding(new javafx.geometry.Insets(5.0, 10.0, 5.0, 10.0));
 
-        // Creating VBox for Label
         VBox labelVBox = new VBox();
         labelVBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-        // Creating Label
         Label label = new Label(content);
         label.setTextFill(javafx.scene.paint.Color.WHITE);
         label.setMaxWidth(Double.MAX_VALUE);
@@ -98,13 +107,11 @@ public class ConfirmationController
         label.setFont(new Font(26.0));
 
         labelVBox.getChildren().add(label);
-        VBox.setVgrow(labelVBox, javafx.scene.layout.Priority.ALWAYS); // Dodaj vgrow dla VBox
+        VBox.setVgrow(labelVBox, javafx.scene.layout.Priority.ALWAYS);
 
-        // Creating Buttons
         Button deleteButton = new Button("Usuń");
         deleteButton.setStyle("-fx-font-size: 15.0;");
         deleteButton.getStyleClass().add("mainScreenbutton");
-        // Dodanie obsługi zdarzenia dla przycisku "Usuń"
         deleteButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -115,7 +122,6 @@ public class ConfirmationController
         Button confirmButton = new Button("Potwierdź i rozpocznij");
         confirmButton.setStyle("-fx-font-size: 15.0;");
         confirmButton.getStyleClass().add("mainScreenbutton");
-        // Dodanie obsługi zdarzenia dla przycisku "Potwierdź i rozpocznij"
         confirmButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -123,36 +129,48 @@ public class ConfirmationController
             }
         });
 
-        // Adding components to the entryBox
         entryBox.getChildren().addAll(labelVBox, deleteButton, confirmButton);
-
-        // Ustawienie HBox.hgrow dla VBox
         HBox.setHgrow(labelVBox, Priority.ALWAYS);
         container.getChildren().add(entryBox);
     }
 
-    // Example handler methods
+    /**
+     * Obsługuje kliknięcie przycisku usuwania rezerwacji.
+     *
+     * @param id Identyfikator rezerwacji.
+     */
     private void handleDelete(int id) {
-        System.out.println("Delete clicked for ID: " + id);
-        if (Client.instance!=null)
-        {
+        logger.info("Delete clicked for ID: " + id);
+        if (Client.instance != null) {
             Client.instance.RequestCancelReservation(id);
         }
     }
 
+    /**
+     * Obsługuje kliknięcie przycisku potwierdzenia rezerwacji.
+     *
+     * @param id Identyfikator rezerwacji.
+     */
     private void handleConfirm(int id) {
-        System.out.println("Confirm clicked for ID: " + id);
-        if (Client.instance!=null)
-        {
+        logger.info("Confirm clicked for ID: " + id);
+        if (Client.instance != null) {
             Client.instance.RequestConfirmReservation(id);
         }
     }
-    public void Refresh(){
+
+    /**
+     * Odświeża widok potwierdzeń rezerwacji.
+     */
+    public void Refresh() {
         container.getChildren().clear();
         StartScene();
     }
-    public void GoBack()
-    {
+
+    /**
+     * Powraca do poprzedniej sceny.
+     */
+    public void GoBack() {
         OffersController.openScene();
+        logger.info("Go back button pressed");
     }
 }

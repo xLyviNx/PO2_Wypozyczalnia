@@ -1,44 +1,75 @@
 package org.projektpo2;
 
 import org.projektpo2.packets.*;
-import src.DatabaseRepositories.ConfirmationRepository;
-import src.DatabaseRepositories.OfferRepository;
-import src.DatabaseRepositories.ReservationRepository;
-import src.DatabaseRepositories.UserRepository;
+import org.projektpo2.DatabaseRepositories.ConfirmationRepository;
+import org.projektpo2.DatabaseRepositories.OfferRepository;
+import org.projektpo2.DatabaseRepositories.ReservationRepository;
+import org.projektpo2.DatabaseRepositories.UserRepository;
 import java.io.*;
 import java.net.*;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+/**
+ * Klasa reprezentująca serwer.
+ */
 public class Server {
+    private static final Logger logger = Utilities.getLogger(Server.class);
+    /** Flaga informująca o zamykaniu serwera. */
     public volatile boolean closing = false;
+
+    /** Executor obsługujący wątki klientów. */
     public ExecutorService executor;
+
+    /** Lista podłączonych klientów. */
     public ArrayList<User> connectedClients = new ArrayList<>();
+
+    /** Gniazdo serwera. */
     private ServerSocket serverSocket;
 
-    public void start(String ip, int port) throws IOException {
+    /**
+     * Metoda rozpoczynająca działanie serwera.
+     *
+     * @param port Numer portu serwera.
+     * @throws IOException W przypadku problemów związanych z gniazdem serwera.
+     */
+    public void start(int port) throws IOException {
         initializeServerSocket(port);
         startConsoleThread();
         acceptClientConnections();
     }
 
+    /**
+     * Inicjalizuje gniazdo serwera.
+     *
+     * @param port Numer portu serwera.
+     * @throws IOException W przypadku problemów związanych z gniazdem serwera.
+     */
     private void initializeServerSocket(int port) throws IOException {
         serverSocket = new ServerSocket(port);
     }
+
+    /**
+     * Rozpoczyna wątek obsługujący konsolę serwera.
+     */
     private void startConsoleThread() {
-        ConsoleHandler consoleHandler = new ConsoleHandler(serverSocket,this);
+        ConsoleHandler consoleHandler = new ConsoleHandler(serverSocket, this);
         Thread console = new Thread(consoleHandler);
         console.setDaemon(true);
         console.start();
     }
+
+    /**
+     * Akceptuje połączenia klientów i uruchamia wątek obsługujący każde połączenie.
+     */
     private void acceptClientConnections() {
         executor = Executors.newCachedThreadPool();
-        while (true) {
+        do {
             try {
                 if (!serverSocket.isClosed() && !closing) {
                     Socket clientSocket = serverSocket.accept();
@@ -49,16 +80,18 @@ public class Server {
                     ex.printStackTrace();
                 }
             }
-            if (closing) {
-                break;
-            }
-        }
+        } while (!closing);
     }
+    /**
+     * Metoda obsługująca połączenie z klientem.
+     *
+     * @param socket Socket klienta.
+     */
     private void handleClient(Socket socket) {
         User session = null;
         try (ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
              ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream())) {
-            System.out.println("CLIENT CONNECTED " + socket);
+            logger.info("CLIENT CONNECTED " + socket);
             session = initializeSession(socket);
             while (true) {
                 NetData data = (NetData) input.readObject();
@@ -69,7 +102,7 @@ public class Server {
                     try {
                         handleOperation(data, output, session);
                     } catch (SQLException e) {
-                        SendError(output, "Blad polaczenia z baza danych.");
+                        sendError(output, "Blad polaczenia z baza danych.");
                     }
                 }
             }
@@ -80,6 +113,12 @@ public class Server {
         }
     }
 
+    /**
+     * Inicjalizuje sesję klienta.
+     *
+     * @param socket Socket klienta.
+     * @return Obiekt reprezentujący sesję klienta.
+     */
     private User initializeSession(Socket socket) {
         User session = new User();
         session.isSignedIn = false;
@@ -88,14 +127,31 @@ public class Server {
         return session;
     }
 
+    /**
+     * Metoda obsługująca żądanie wyjścia z połączenia.
+     *
+     * @param socket Socket klienta.
+     * @param output Strumień wyjściowy.
+     * @param session Sesja klienta.
+     * @throws IOException W przypadku błędu związanego z operacją na strumieniu.
+     */
     private void handleExit(Socket socket, ObjectOutputStream output, User session) throws IOException {
-        System.out.println("Client " + socket + " sends exit...");
-        System.out.println("Connection closing...");
+        logger.info("Client " + socket + " sends exit...");
+        logger.info("Connection closing...");
         socket.close();
-        System.out.println("Closed");
+        logger.info("Closed");
         connectedClients.remove(session);
     }
 
+    /**
+     * Metoda obsługująca otrzymane od klienta operacje.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param output Strumień wyjściowy.
+     * @param session Sesja klienta.
+     * @throws SQLException W przypadku błędu związanego z bazą danych.
+     * @throws IOException  W przypadku błędu związanego z operacją na strumieniu.
+     */
     private void handleOperation(NetData data, ObjectOutputStream output, User session) throws SQLException, IOException {
         switch (data.operation) {
             case Register:
@@ -125,7 +181,7 @@ public class Server {
             case DeleteOffer:
                 handleDeleteOffer(data, session, output);
                 break;
-            case RequestConfirmtations:
+            case RequestConfirmations:
                 handleSendConfirmations(data, session, output);
                 break;
             case ManageReservation:
@@ -135,11 +191,19 @@ public class Server {
                 handleConfirmButton(data, session, output);
                 break;
             default:
-                System.out.println(session.clientSocket + " requested unknown operation.");
+                logger.info(session.clientSocket + " requested unknown operation.");
                 break;
         }
     }
 
+    /**
+     * Metoda obsługująca wylogowanie klienta.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param output Strumień wyjściowy.
+     * @param session Sesja klienta.
+     * @throws IOException W przypadku błędu związanego z operacją na strumieniu.
+     */
     private void handleLogout(NetData data, ObjectOutputStream output, User session) throws IOException {
         if (session.isSignedIn) {
             try {
@@ -149,66 +213,52 @@ public class Server {
                 output.writeObject(response);
                 output.flush();
             } catch (Exception ex) {
-                ex.printStackTrace();
+                logger.log(Level.SEVERE, "Error handling logout", ex);
             }
         } else {
-            SendError(output, "Nie jestes zalogowany/a!");
+            sendError(output, "Nie jestes zalogowany/a!");
         }
     }
 
+    /**
+     * Metoda obsługująca nieoczekiwane zamknięcie połączenia przez klienta.
+     *
+     * @param socket  Socket klienta.
+     * @param session Sesja klienta.
+     */
     private void handleUnexpectedClosure(Socket socket, User session) {
-        System.out.println("Client " + socket + " unexpectedly closed the connection.");
+        logger.info("Client " + socket + " unexpectedly closed the connection.");
         if (session != null) {
             connectedClients.remove(session);
         }
     }
 
+    /**
+     * Metoda obsługująca błąd wejścia/wyjścia.
+     *
+     * @param socket  Socket klienta.
+     * @param session Sesja klienta.
+     * @param e       Wyjątek.
+     */
     private void handleIOException(Socket socket, User session, Exception e) {
-        e.printStackTrace();
+        logger.log(Level.SEVERE, "Error handling IO", e);
         if (session != null) {
             connectedClients.remove(session);
         }
     }
 
-    private void handleConfirmButton(NetData data, User session, ObjectOutputStream output) {
-        ConfirmButtonVisibility res = new ConfirmButtonVisibility(NetData.Operation.ConfirmationsButton, false);
-        if (session.isSignedIn && !session.username.isEmpty() && session.canManageReservations) {
-            res.isVisible = true;
-        }
-        try {
-            output.writeObject(res);
-            output.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void handleManageReservation(NetData data, User session, ObjectOutputStream output) throws IOException {
-        if (!session.hasPermission(data.operation)) {
-            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
-            return;
-        }
-        ManageReservationRequest req = (ManageReservationRequest) data;
-        ReservationRepository reservationRepository = new ReservationRepository(new DatabaseHandler());
-        if (req.id != 0) {
-            boolean success;
-            if (req.confirm)
-                success = reservationRepository.confirmReservation(req.id);
-            else
-                success = reservationRepository.deleteReservation(req.id);
-            if (success) {
-                req.operationType = NetData.OperationType.Success;
-                output.writeObject(req);
-                output.flush();
-            } else
-                SendError(output, "Błąd operacji!");
-        } else
-            SendError(output, "Błąd przetwarzania żądania!");
-    }
-
+    /**
+     * Metoda obsługująca żądanie potwierdzeń rezerwacji od klienta.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param session Sesja klienta.
+     * @param output Strumień wyjściowy.
+     * @throws IOException  W przypadku błędu związanego z operacją na strumieniu.
+     * @throws SQLException W przypadku błędu związanego z bazą danych.
+     */
     private void handleSendConfirmations(NetData data, User session, ObjectOutputStream output) throws IOException, SQLException {
         if (!session.hasPermission(data.operation)) {
-            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
+            sendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
             return;
         }
         DatabaseHandler dbh = new DatabaseHandler();
@@ -222,14 +272,77 @@ public class Server {
                 output.writeObject(reservation);
                 output.flush();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, "Error handling send confirmations", e);
             }
         });
     }
 
+    /**
+     * Metoda obsługująca zarządzanie rezerwacją od klienta.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param session Sesja klienta.
+     * @param output Strumień wyjściowy.
+     * @throws IOException W przypadku błędu związanego z operacją na strumieniu.
+     */
+    private void handleManageReservation(NetData data, User session, ObjectOutputStream output) throws IOException {
+        if (!session.hasPermission(data.operation)) {
+            sendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
+            return;
+        }
+        ManageReservationRequest req = (ManageReservationRequest) data;
+        ReservationRepository reservationRepository = new ReservationRepository(new DatabaseHandler());
+        if (req.id != 0) {
+            boolean success;
+            if (req.confirm)
+                success = reservationRepository.confirmReservation(req.id);
+            else
+                success = reservationRepository.deleteReservation(req.id);
+            if (success) {
+                req.operationType = NetData.OperationType.Success;
+                try {
+                    output.writeObject(req);
+                    output.flush();
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Error handling manage reservation", e);
+                }
+            } else
+                sendError(output, "Błąd operacji!");
+        } else
+            sendError(output, "Błąd przetwarzania żądania!");
+    }
+
+    /**
+     * Metoda obsługująca przycisk potwierdzeń rezerwacji od klienta.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param session Sesja klienta.
+     * @param output Strumień wyjściowy.
+     */
+    private void handleConfirmButton(NetData data, User session, ObjectOutputStream output) {
+        ConfirmButtonVisibility res = new ConfirmButtonVisibility(NetData.Operation.ConfirmationsButton, false);
+        if (session.isSignedIn && !session.username.isEmpty() && session.canManageReservations) {
+            res.isVisible = true;
+        }
+        try {
+            output.writeObject(res);
+            output.flush();
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error handling confirm button", e);
+        }
+    }
+
+    /**
+     * Metoda obsługująca żądanie usunięcia oferty od klienta.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param session Sesja klienta.
+     * @param output Strumień wyjściowy.
+     * @throws IOException W przypadku błędu związanego z operacją na strumieniu.
+     */
     private void handleDeleteOffer(NetData data, User session, ObjectOutputStream output) throws IOException {
         if (!session.hasPermission(data.operation)) {
-            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
+            sendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
             return;
         }
         DeleteOfferRequestPacket req = (DeleteOfferRequestPacket) data;
@@ -245,19 +358,25 @@ public class Server {
                     return;
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, "Error handling delete offer", e);
             }
-            SendError(output, "Nie można usunąć tej oferty lub oferta nie istnieje!");
+            sendError(output, "Nie można usunąć tej oferty lub oferta nie istnieje!");
         } else {
-            SendError(output, "Nieprawidłowe dane przesłane do usuwania oferty!");
+            sendError(output, "Nieprawidłowe dane przesłane do usuwania oferty!");
         }
     }
 
-
-    private void handleAddOffer(NetData data, User session, ObjectOutputStream output){
+    /**
+     * Metoda obsługująca dodawanie nowej oferty od klienta.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param session Sesja klienta.
+     * @param output Strumień wyjściowy.
+     */
+    private void handleAddOffer(NetData data, User session, ObjectOutputStream output) {
         try {
             if (!session.hasPermission(data.operation)) {
-                SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
+                sendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
                 return;
             }
             VehiclePacket vp = (VehiclePacket) data;
@@ -270,15 +389,19 @@ public class Server {
                     output.writeObject(newRes);
                     output.flush();
                 } else {
-                    SendError(output, "Wystąpił problem z dodawaniem ogłoszenia.");
+                    sendError(output, "Wystąpił problem z dodawaniem ogłoszenia.");
                 }
             }
-        }catch(Exception ex)
-        {
-            ex.printStackTrace();
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, "Error handling add offer", ex);
         }
     }
 
+    /**
+     * Metoda pobierająca uprawnienia użytkownika.
+     *
+     * @param session Sesja użytkownika.
+     */
     private void fetchUserPermissions(User session) {
         if (session.isSignedIn) {
             UserRepository userRepository = new UserRepository(new DatabaseHandler());
@@ -286,24 +409,16 @@ public class Server {
         }
     }
 
-    private boolean reservationExists(int id, ObjectOutputStream output, DatabaseHandler dbh) {
-        String query = "SELECT * FROM wypozyczenie " +
-                "WHERE id_wypozyczenia = ? AND (data_wypozyczenia IS NULL OR (data_wypozyczenia IS NOT NULL AND NOW() BETWEEN data_wypozyczenia AND DATE_ADD(data_wypozyczenia, INTERVAL days DAY)))";
-
-        try (PreparedStatement preparedStatement = dbh.conn.prepareStatement(query)) {
-            preparedStatement.setInt(1, id);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            return resultSet.next();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            SendError(output, "Blad bazy danych!");
-            return true;
-        }
-    }
-
+    /**
+     * Metoda obsługująca rezerwację pojazdu od klienta.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param session Sesja klienta.
+     * @param output Strumień wyjściowy.
+     */
     private void handleReservation(NetData data, User session, ObjectOutputStream output) {
         if (!session.hasPermission(data.operation)) {
-            SendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
+            sendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
             return;
         }
         ReservationRequestPacket resData = (ReservationRequestPacket) data;
@@ -316,13 +431,21 @@ public class Server {
                 output.writeObject(response);
                 output.flush();
             } catch (SQLException | IOException e) {
-                e.printStackTrace();
-                SendError(output, "Błąd podczas przetwarzania rezerwacji.");
+                logger.log(Level.SEVERE, "Error handling reservation", e);
+                sendError(output, "Błąd podczas przetwarzania rezerwacji.");
             }
         } else {
-            SendError(output, "Rezerwacja istnieje, albo wystąpił błąd połączenia z bazą danych.");
+            sendError(output, "Rezerwacja istnieje, albo wystąpił błąd połączenia z bazą danych.");
         }
     }
+
+    /**
+     * Metoda obsługująca żądanie szczegółów oferty od klienta.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param session Sesja klienta.
+     * @param output Strumień wyjściowy.
+     */
     private void handleOfferDetails(NetData data, User session, ObjectOutputStream output) {
         OfferDetailsRequestPacket req = (OfferDetailsRequestPacket) data;
         if (req.id > 0) {
@@ -337,29 +460,37 @@ public class Server {
                     output.writeObject(response);
                     output.flush();
                 } else {
-                    SendError(output, "Brak oferty o podanym identyfikatorze.");
+                    sendError(output, "Brak oferty o podanym identyfikatorze.");
                 }
             } catch (SQLException | IOException e) {
-                e.printStackTrace();
-                SendError(output, "Błąd przetwarzania zapytania o ofertę.");
+                logger.log(Level.SEVERE, "Error handling offer details request", e);
+                sendError(output, "Błąd przetwarzania zapytania o ofertę.");
             }
         } else {
-            SendError(output, "Nieprawidłowe dane zapytania.");
+            sendError(output, "Nieprawidłowe dane zapytania.");
         }
     }
 
-
+    /**
+     * Metoda obsługująca rejestrację użytkownika.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param output Strumień wyjściowy.
+     * @param session Sesja klienta.
+     * @throws IOException  W przypadku błędu związanego z operacją na strumieniu.
+     * @throws SQLException W przypadku błędu związanego z operacją na bazie danych.
+     */
     private void handleRegister(NetData data, ObjectOutputStream output, User session) throws IOException, SQLException {
         NetData response = new NetData(NetData.Operation.Register);
         if (session.isSignedIn) {
-            SendError(output, "Jesteś już zalogowany/a!");
+            sendError(output, "Jesteś już zalogowany/a!");
             return;
         }
         RegisterPacket regData = (RegisterPacket) data;
 
         if (String.valueOf(regData.phonenumber).length() == 9) {
             if (regData.anyEmpty()) {
-                SendError(output, "Żadne pole nie może być puste!");
+                sendError(output, "Żadne pole nie może być puste!");
                 return;
             }
             if (regData.password.equals(regData.repeat_password)) {
@@ -372,7 +503,7 @@ public class Server {
                     }
 
                     if (userRepository.isUserExists(regData.login, regData.phonenumber)) {
-                        SendError(output, "Użytkownik o podanym loginie lub numerze telefonu już istnieje.");
+                        sendError(output, "Użytkownik o podanym loginie lub numerze telefonu już istnieje.");
                         return;
                     }
 
@@ -384,25 +515,34 @@ public class Server {
                         session.username = regData.login;
                         fetchUserPermissions(session);
                     } else {
-                        SendError(output, "Nie udało się zarejestrować.");
+                        sendError(output, "Nie udało się zarejestrować.");
                     }
                 }
             } else {
-                SendError(output, "Podane hasła nie są identyczne!");
+                sendError(output, "Podane hasła nie są identyczne!");
             }
         } else {
-            SendError(output, "Numer telefonu jest nieprawidłowy!");
+            sendError(output, "Numer telefonu jest nieprawidłowy!");
         }
     }
 
+    /**
+     * Metoda obsługująca logowanie użytkownika.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param output Strumień wyjściowy.
+     * @param session Sesja klienta.
+     * @throws IOException  W przypadku błędu związanego z operacją na strumieniu.
+     * @throws SQLException W przypadku błędu związanego z operacją na bazie danych.
+     */
     private void handleLogin(NetData data, ObjectOutputStream output, User session) throws IOException, SQLException {
         if (session.isSignedIn) {
-            SendError(output, "Jesteś już zalogowany!");
+            sendError(output, "Jesteś już zalogowany!");
             return;
         }
         LoginPacket logdata = (LoginPacket) data;
         if (logdata.login.isEmpty() || logdata.password.isEmpty()) {
-            SendError(output, "Żadne pole nie może być puste!");
+            sendError(output, "Żadne pole nie może być puste!");
         }
         DatabaseHandler dbh = new DatabaseHandler();
         try (dbh) {
@@ -420,25 +560,42 @@ public class Server {
                 output.writeObject(response);
                 output.flush();
             } else {
-                SendError(output, "Nie udało się zalogować! Upewnij się, że dane są poprawne.");
+                sendError(output, "Nie udało się zalogować! Upewnij się, że dane są poprawne.");
             }
         }
     }
+
+    /**
+     * Metoda obsługująca żądanie przesyłania nazwy użytkownika oferty.
+     *
+     * @param output Strumień wyjściowy.
+     * @param session Sesja klienta.
+     * @throws IOException W przypadku błędu związanego z operacją na strumieniu.
+     */
     private void handleOfferUsername(ObjectOutputStream output, User session) throws IOException {
         UsernamePacket response = new UsernamePacket();
-        response.isSignedIn=session.isSignedIn;
+        response.isSignedIn = session.isSignedIn;
         if (session.isSignedIn) {
-            response.username=session.username;
+            response.username = session.username;
         }
         output.writeObject(response);
         output.flush();
     }
+
+    /**
+     * Metoda obsługująca żądanie przesyłania informacji o dostępności przycisku dodawania oferty.
+     *
+     * @param data   Otrzymane dane od klienta.
+     * @param output Strumień wyjściowy.
+     * @param session Sesja klienta.
+     */
     private void handleOfferElement(NetData data, ObjectOutputStream output, User session) {
         try {
             AddOfferButtonVisibility addBr = new AddOfferButtonVisibility(session.canAddOffers);
             output.writeObject(addBr);
             output.flush();
         } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error handling offer element request", e);
             throw new RuntimeException(e);
         }
         try (DatabaseHandler dbh = new DatabaseHandler()) {
@@ -462,47 +619,54 @@ public class Server {
                 output.flush();
 
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, "Error handling offer element request", e);
                 throw new RuntimeException(e);
             }
         }
     }
-    private void SendError(ObjectOutputStream output, String error) {
-        if (output == null)
+
+    /**
+     * Metoda do wysyłania komunikatu błędu do klienta.
+     *
+     * @param output Strumień wyjściowy.
+     * @param error  Komunikat błędu.
+     */
+    private void sendError(ObjectOutputStream output, String error) {
+        if (output == null) {
             return;
+        }
         ErrorPacket err = new ErrorPacket(error);
         err.operationType = NetData.OperationType.Error;
         try {
             output.writeObject(err);
             output.flush();
         } catch (IOException e) {
-            System.err.println("Nie udalo sie wyslac komunikatu bledu.");
+            logger.log(Level.SEVERE, "Error sending error message", e);
         }
     }
-    boolean checkDBConnection(DatabaseHandler dbh, ObjectOutputStream output)
-    {
-        NetData response = new NetData(NetData.Operation.Unspecified);
+
+    /**
+     * Metoda sprawdzająca połączenie z bazą danych.
+     *
+     * @param dbh    Obiekt obsługujący połączenie z bazą danych.
+     * @param output Strumień wyjściowy.
+     * @return true, jeśli połączenie z bazą danych jest poprawne, w przeciwnym razie false.
+     */
+    boolean checkDBConnection(DatabaseHandler dbh, ObjectOutputStream output) {
         try {
             if (dbh.conn == null || dbh.conn.isClosed()) {
-                if (output!=null)
-                    SendError(output, "Błąd połączenia z bazą danych.");
+                if (output != null)
+                    sendError(output, "Błąd połączenia z bazą danych.");
                 dbh.close();
                 return false;
             }
         } catch (SQLException e) {
-            if (output!=null) {
-                SendError(output, "Błąd połączenia z bazą danych.");
+            if (output != null) {
+                sendError(output, "Błąd połączenia z bazą danych.");
             }
             return false;
         }
         return true;
     }
-    /*void SendMessage(ObjectOutputStream output, String mes, NetData data) throws IOException {
-        if (data == null || output == null)
-            return;
-        data.operationType = NetData.OperationType.MessageBox;
-        data.Strings.add(mes);
-        output.writeObject(data);
-        output.flush();
-    }*/
+
 }

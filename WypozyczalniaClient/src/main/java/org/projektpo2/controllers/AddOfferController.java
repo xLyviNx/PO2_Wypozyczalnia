@@ -17,42 +17,124 @@ import java.net.URL;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
+/**
+ * Kontroler odpowiedzialny za dodawanie nowych ofert do systemu.
+ */
 public class AddOfferController {
+
+    /**
+     * Instancja kontrolera.
+     */
     public static AddOfferController instance;
+
+    /**
+     * Scena JavaFX dla tego kontrolera.
+     */
     public Scene scene;
-    private static final Logger logger = Logger.getLogger(AddOfferController.class.getName());
+
+    /**
+     * Logger dla tej klasy.
+     */
+    private static final Logger logger = Utilities.getLogger(AddOfferController.class);
+
+    /**
+     * Pole tekstowe do wprowadzania marki pojazdu.
+     */
     @FXML
     private TextField marka;
+
+    /**
+     * Pole tekstowe do wprowadzania modelu pojazdu.
+     */
     @FXML
     private TextField model;
+
+    /**
+     * Pole tekstowe do wprowadzania roku produkcji pojazdu.
+     */
     @FXML
     private TextField rokprod;
+
+    /**
+     * Pole tekstowe do wprowadzania silnika pojazdu.
+     */
     @FXML
     private TextField silnik;
+
+    /**
+     * Pole tekstowe do wprowadzania ceny wynajmu pojazdu.
+     */
     @FXML
     private TextField cena;
+
+    /**
+     * Pole tekstowe do wprowadzania opisu pojazdu.
+     */
     @FXML
     private TextArea opis;
+
+    /**
+     * Przycisk potwierdzający dodanie nowej oferty.
+     */
     @FXML
     public Button but_confirm;
+
+    /**
+     * Etykieta wyświetlająca nazwę pliku dla miniatury pojazdu.
+     */
     @FXML
     private Label thumbText;
+
+    /**
+     * Etykieta wyświetlająca nazwy plików dla zdjęć pojazdu.
+     */
     @FXML
     private Label imagesText;
+
+    /**
+     * Przycisk do wyboru plików z obrazami pojazdu.
+     */
     @FXML
     private Button imagesButton;
+
+    /**
+     * Przycisk do wyboru pliku z miniaturą pojazdu.
+     */
     @FXML
     private Button thumbButton;
-    private byte[] selectedThumbnail;
-    private ArrayList<byte[]> selectedImages;
-    private ArrayList<String> selectedImagesNames = new ArrayList<>();
-    private String selectedImageName;
+
+    /**
+     * Pole tekstowe do wprowadzania pojemności silnika pojazdu.
+     */
     @FXML
     private TextField enginecap;
 
+    /**
+     * Lista z wybranymi plikami zdjęć pojazdu.
+     */
+    private ArrayList<byte[]> selectedImages;
+
+    /**
+     * Lista z nazwami wybranych plików zdjęć pojazdu.
+     */
+    private ArrayList<String> selectedImagesNames = new ArrayList<>();
+
+    /**
+     * Miniatura pojazdu.
+     */
+    private byte[] selectedThumbnail;
+
+    /**
+     * Nazwa pliku z miniaturą pojazdu.
+     */
+    private String selectedImageName;
+    /**
+     * Otwiera scenę dodawania nowej oferty.
+     *
+     * @return Instancja kontrolera sceny dodawania oferty.
+     */
     public static AddOfferController openScene() {
         try {
             URL path = OffersController.class.getResource("/org/projektpo2/fxml/addOffer.fxml");
@@ -86,11 +168,15 @@ public class AddOfferController {
         }
         return null;
     }
-
+    /**
+     * Inicjuje scenę dodawania oferty.
+     */
     private void StartScene() {
         logger.info("Scene started");
     }
-
+    /**
+     * Obsługuje przycisk wybierania plików z obrazami pojazdu.
+     */
     @FXML
     public void imagesPress() {
         FileChooser fileChooser = new FileChooser();
@@ -132,7 +218,9 @@ public class AddOfferController {
             logger.info("No files selected");
         }
     }
-
+    /**
+     * Obsługuje przycisk wybierania miniatury pojazdu.
+     */
     @FXML
     public void thumbnailPress() {
         FileChooser fileChooser = new FileChooser();
@@ -159,13 +247,17 @@ public class AddOfferController {
             logger.info("No file selected");
         }
     }
-
+    /**
+     * Obsługuje przycisk anulowania dodawania oferty.
+     */
     @FXML
     public void Cancel() {
         OffersController.openScene();
         logger.info("Cancel button pressed");
     }
-
+    /**
+     * Obsługuje przycisk potwierdzający dodanie nowej oferty.
+     */
     @FXML
     public void Confirm() {
         if (Client.instance != null) {

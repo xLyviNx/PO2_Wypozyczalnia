@@ -3,19 +3,38 @@ package org.projektpo2;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+/**
+ * Klasa obsługująca konsolę serwera.
+ */
 public class ConsoleHandler implements Runnable {
+    private static final Logger logger = Utilities.getLogger(ConsoleHandler.class);
+
+    /** Gniazdo serwera. */
     private final ServerSocket serverSocket;
 
+    /** Obiekt serwera. */
     private Server sv;
+
+    /**
+     * Konstruktor inicjalizujący obiekt klasy.
+     *
+     * @param serverSocket Gniazdo serwera.
+     * @param srv          Obiekt serwera.
+     */
     public ConsoleHandler(ServerSocket serverSocket, Server srv) {
         this.serverSocket = serverSocket;
-        this.sv=srv;
+        this.sv = srv;
     }
 
+    /**
+     * Metoda uruchamiająca wątek obsługujący konsolę serwera.
+     */
     @Override
     public void run() {
-        System.out.println("Konsola jest aktywna.");
+        logger.info("Konsola jest aktywna.");
         Scanner scanner = new Scanner(System.in);
         while (true) {
             String command = scanner.nextLine();
@@ -33,22 +52,31 @@ public class ConsoleHandler implements Runnable {
         }
     }
 
+    /**
+     * Metoda obsługująca komendę test.
+     */
     private void handleTestCommand() {
-        System.out.println("TEST");
+        logger.info("TEST");
     }
 
+    /**
+     * Metoda obsługująca komendę exit lub stop.
+     */
     private void handleExitCommand() {
-        System.out.println("Zatrzymywanie serwera...");
+        logger.info("Zatrzymywanie serwera...");
         try {
             sv.closing = true;
             sv.executor.shutdown();
             serverSocket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Błąd zatrzymywania serwera", e);
         }
     }
 
+    /**
+     * Metoda obsługująca nieznane komendy.
+     */
     private void handleUnknownCommand() {
-        System.out.println("Nieznana komenda.");
+        logger.warning("Nieznana komenda.");
     }
 }

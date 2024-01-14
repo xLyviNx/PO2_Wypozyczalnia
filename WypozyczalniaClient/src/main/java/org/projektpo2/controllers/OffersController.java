@@ -1,4 +1,5 @@
 package org.projektpo2.controllers;
+
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
@@ -10,6 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.projektpo2.Client;
+import org.projektpo2.Utilities;
 import org.projektpo2.WypozyczalniaOkno;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -19,137 +21,263 @@ import javafx.scene.Parent;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.logging.*;
 
+/**
+ * Kontroler obsługujący widok ofert.
+ */
 public class OffersController {
+
+    /**
+     * Panel, który zawiera oferty.
+     */
     @FXML
     private FlowPane flow;
-    @FXML
-    private VBox offerButtonTemplate;
+
+    /**
+     * Pasek z przyciskami filtrów.
+     */
     @FXML
     private HBox filtersbox;
+
+    /**
+     * Etykieta wyświetlająca nazwę użytkownika.
+     */
     @FXML
     private Label label_user;
+
+    /**
+     * Przycisk dodawania nowej oferty.
+     */
     @FXML
     public Button addOfferButton;
+
+    /**
+     * Przycisk otwierający potwierdzenia rezerwacji.
+     */
     @FXML
     public Button confirmationsButton;
-    @FXML
-    private Button refreshButton;
-    @FXML
-    private Button filterButton;
-    @FXML
-    private Button sortButton;
+
+    /**
+     * Pole tekstowe do wprowadzania minimalnej ceny.
+     */
     @FXML
     private TextField priceMin;
+
+    /**
+     * Pole tekstowe do wprowadzania maksymalnej ceny.
+     */
     @FXML
     private TextField priceMax;
+
+    /**
+     * Pole tekstowe do wprowadzania minimalnego roku.
+     */
     @FXML
     private TextField yearMin;
+
+    /**
+     * Pole tekstowe do wprowadzania maksymalnego roku.
+     */
     @FXML
     private TextField yearMax;
+
+    /**
+     * Pole tekstowe do wprowadzania minimalnej pojemności silnika.
+     */
     @FXML
     private TextField capMin;
+
+    /**
+     * Pole tekstowe do wprowadzania maksymalnej pojemności silnika.
+     */
     @FXML
     private TextField capMax;
+
+    /**
+     * Grupa przycisków wyboru marki.
+     */
     @FXML
     private ToggleGroup brand;
+
+    /**
+     * Przycisk zmiany sortowania.
+     */
     @FXML
     private Button SortChangeButton;
+
+    /**
+     * Kontener na przyciski wyboru marek.
+     */
     @FXML
     public VBox filterBrandsParent;
+
+    /**
+     * Instancja kontrolera.
+     */
     public static OffersController instance;
+
+    /**
+     * Scena kontrolera.
+     */
     public Scene scene;
+
+    /**
+     * Cena minimum.
+     */
     private float priceMinValue = -1;
+
+    /**
+     * Cena maksimum.
+     */
     private float priceMaxValue = -1;
+
+    /**
+     * Minimalny rok.
+     */
     private int yearMinValue = -1;
+
+    /**
+     * Maksymalny rok.
+     */
     private int yearMaxValue = -1;
+
+    /**
+     * Minimalna pojemność silnika.
+     */
     private int engineCapMinValue = -1;
+
+    /**
+     * Maksymalna pojemność silnika.
+     */
     private int engineCapMaxValue = -1;
+
+    /**
+     * Wybrana marka.
+     */
     private String brandnameValue = null;
+
+    /**
+     * Kierunek sortowania cen (malejąco/rosnąco).
+     */
     boolean priceDESC;
-    public void StartScene()
-    {
-        if (Client.instance != null)
-        {
+
+    /**
+     * Logger dla kontrolera ofert.
+     */
+    private static final Logger logger = Utilities.getLogger(OffersController.class);
+
+    /**
+     * Inicjuje scenę, wysyła zapytania do serwera.
+     */
+    public void StartScene() {
+        if (Client.instance != null) {
             Client.instance.RequestUsername();
-            SortChangeButton.setText(priceDESC? "Aktualnie: Ceną w dół" : "Aktualnie: Ceną w górę");
+            SortChangeButton.setText(priceDESC ? "Aktualnie: Ceną w dół" : "Aktualnie: Ceną w górę");
             Refresh();
             Client.instance.RequestConfButton();
         }
     }
+
+    /**
+     * Otwiera scenę z widokiem ofert.
+     *
+     * @return Instancja kontrolera ofert.
+     */
     public static OffersController openScene() {
         try {
-            // Load the FXML file
             URL path = OffersController.class.getResource("/org/projektpo2/fxml/cars.fxml");
             if (path == null) {
-                System.err.println("FXML file not found.");
+                logger.log(Level.SEVERE, "FXML file not found.");
                 return null;
             }
             FXMLLoader loader = new FXMLLoader(path);
             Parent root = loader.load();
-
             Scene scene = new Scene(root, 1280, 720);
-
             URL cssPath = OffersController.class.getResource("/org/projektpo2/fxml/style1.css");
             if (cssPath != null) {
                 scene.getStylesheets().add(cssPath.toExternalForm());
             } else {
-                System.err.println("CSS file not found (OffersController).");
+                logger.log(Level.WARNING, "CSS file not found (OffersController).");
             }
-
             Stage primaryStage = WypozyczalniaOkno.getPrimaryStage();
             primaryStage.setScene(scene);
-
             primaryStage.show();
             instance = loader.getController();
-            instance.scene=scene;
+            instance.scene = scene;
             instance.StartScene();
             return instance;
         } catch (IOException e) {
-            System.err.println("Error loading FXML file: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error loading FXML file: " + e.getMessage(), e);
         } catch (RuntimeException e) {
-            System.err.println("Runtime error during FXML loading: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Runtime error during FXML loading: " + e.getMessage(), e);
         } catch (Exception e) {
-            System.err.println("Unknown error during FXML loading.");
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Unknown error during FXML loading.", e);
         }
         return null;
     }
+
+    /**
+     * Dodaje węzeł oferty do interfejsu użytkownika.
+     *
+     * @param vehicleName Nazwa pojazdu.
+     * @param price Cena wynajmu pojazdu na dzień.
+     * @param imageBytes Dane obrazu reprezentującego pojazd.
+     * @param dbid Identyfikator pojazdu w bazie danych.
+     * @param isRent Czy pojazd jest wynajęty.
+     * @param daysLeft Liczba dni pozostałych do końca wynajmu.
+     */
     public static void AddOfferNode(String vehicleName, float price, byte[] imageBytes, int dbid, boolean isRent, int daysLeft) {
-            if (instance != null && WypozyczalniaOkno.instance != null && instance.scene == WypozyczalniaOkno.getPrimaryStage().getScene()) {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        instance.flow.getChildren().add(instance.createOfferNode(vehicleName, price, imageBytes, dbid, isRent, daysLeft));
-                    }
-                });
-            }
+        if (instance != null && WypozyczalniaOkno.instance != null && instance.scene == WypozyczalniaOkno.getPrimaryStage().getScene()) {
+            Platform.runLater(() -> {
+                instance.flow.getChildren().add(instance.createOfferNode(vehicleName, price, imageBytes, dbid, isRent, daysLeft));
+            });
+        }
     }
+
+    /**
+     * Ustawia nazwę użytkownika w interfejsie.
+     *
+     * @param username Nazwa użytkownika.
+     */
     public static void setUsername(String username) {
         if (instance != null && instance.label_user != null) {
             Platform.runLater(() -> {
                 instance.label_user.setText(username);
             });
         } else {
-            System.out.println("instance or usernameText is null: " + instance + ", " + instance.label_user);
+            logger.log(Level.WARNING, "instance or usernameText is null: " + instance + ", " + instance.label_user);
         }
     }
 
-    public void AddFilterBrand(String brandname)
-    {
+    /**
+     * Dodaje filtr marki do interfejsu.
+     *
+     * @param brandname Nazwa marki.
+     */
+    public void AddFilterBrand(String brandname) {
         RadioButton rb = new RadioButton(brandname);
         rb.setStyle("-fx-text-fill: white;");
         rb.setToggleGroup(brand);
         rb.setFont(new Font(15.0));
         filterBrandsParent.getChildren().add(rb);
     }
+
+    /**
+     * Tworzy węzeł oferty.
+     *
+     * @param vehicleName Nazwa pojazdu.
+     * @param price Cena pojazdu.
+     * @param imageBytes Dane obrazu reprezentującego pojazd.
+     * @param dbid Identyfikator pojazdu w bazie danych.
+     * @param isRent Czy pojazd jest wynajęty.
+     * @param daysLeft Liczba dni pozostałych do końca wynajmu.
+     * @return Węzeł oferty.
+     */
     private Node createOfferNode(String vehicleName, float price, byte[] imageBytes, int dbid, boolean isRent, int daysLeft) {
         VBox offerNode = new VBox();
-        offerNode.getStyleClass().addAll( isRent? "offerButtonRent" : (daysLeft == -1? "offerButtonAwaiting" : "offerButton"));
-        offerNode.setAlignment(Pos.CENTER); // Ustawienie środka dla całego VBox
-
+        offerNode.getStyleClass().addAll(isRent ? "offerButtonRent" : (daysLeft == -1 ? "offerButtonAwaiting" : "offerButton"));
+        offerNode.setAlignment(Pos.CENTER);
         HBox imageBox = new HBox();
         ImageView imageView = new ImageView();
         if (imageBytes.length > 0) {
@@ -157,96 +285,116 @@ public class OffersController {
                 Image image = new Image(new ByteArrayInputStream(imageBytes));
                 imageView.setImage(image);
             } catch (Exception ex) {
-                ex.printStackTrace();
+                logger.log(Level.SEVERE, "Error loading image: " + ex.getMessage(), ex);
             }
         }
         imageView.setFitHeight(136.0);
         imageView.setFitWidth(279.0);
         imageBox.getChildren().add(imageView);
-
         VBox textInfo = new VBox();
         textInfo.getStyleClass().addAll("offerButtonBar");
-        textInfo.setAlignment(Pos.CENTER); // Ustawienie środka dla VBox z tekstem
-
+        textInfo.setAlignment(Pos.CENTER);
         Label vehicleLabel = new Label(vehicleName);
         vehicleLabel.getStyleClass().addAll("offerLabel");
-        vehicleLabel.setFont(Font.font("Calibri Light", 20.0)); // Ustawienie rozmiaru tekstu
-
-        Label priceLabel =null;
-        if (isRent)
-        {
+        vehicleLabel.setFont(Font.font("Calibri Light", 20.0));
+        Label priceLabel = null;
+        if (isRent) {
             priceLabel = new Label("Pozostało " + daysLeft + " dni.");
-        }
-        else if (daysLeft==-1)
-        {
+        } else if (daysLeft == -1) {
             priceLabel = new Label("Oczekuje na rozpatrzenie");
-        }
-        else{
+        } else {
             priceLabel = new Label(String.format("%.2f zł/dzień", price));
         }
         priceLabel.getStyleClass().addAll("offerLabel");
-        priceLabel.setFont(Font.font("Calibri Light", 16.0)); // Ustawienie rozmiaru tekstu
-
+        priceLabel.setFont(Font.font("Calibri Light", 16.0));
         textInfo.getChildren().addAll(vehicleLabel, priceLabel);
-
         offerNode.getChildren().addAll(imageBox, textInfo);
-        if(!isRent && daysLeft!=-1) {
+        if (!isRent && daysLeft != -1) {
             offerNode.setOnMouseClicked(event -> {
                 ClickOnItem(dbid);
             });
         }
         return offerNode;
     }
+
+    /**
+     * Obsługuje kliknięcie na element oferty.
+     *
+     * @param id Identyfikator pojazdu.
+     */
+    public void ClickOnItem(int id) {
+        logger.log(Level.INFO, "Clicked item ID: " + id);
+        OfferDetailsController.openScene(id);
+    }
+
+    /**
+     * Obsługuje naciśnięcie przycisku wylogowania.
+     */
     @FXML
-    public void LogoutButton()
-    {
-        if (Client.instance != null)
-        {
+    public void LogoutButton() {
+        if (Client.instance != null) {
             Client.instance.SendLogout();
         }
     }
-    public void ClickOnItem(int id)
-    {
-        System.out.println("KLIKNIETO " + id);
-        OfferDetailsController.openScene(id);
-    }
+
+    /**
+     * Otwiera scenę z dodawaniem nowej oferty.
+     */
     @FXML
-    public void AddOfferButton()
-    {
+    public void AddOfferButton() {
         AddOfferController.openScene();
     }
+
+    /**
+     * Odświeża widok ofert.
+     */
     @FXML
-    public void Refresh()
-    {
+    public void Refresh() {
         flow.getChildren().clear();
         Client.instance.RequestOffers(brandnameValue, yearMinValue, yearMaxValue, engineCapMinValue, engineCapMaxValue, priceMinValue, priceMaxValue, priceDESC);
     }
+
+    /**
+     * Przechodzi do widoku potwierdzeń.
+     */
     @FXML
-    public void GoToConfirmations()
-    {
+    public void GoToConfirmations() {
         ConfirmationController.OpenScene();
     }
+
+    /**
+     * Wyświetla panel z filtrami.
+     */
     @FXML
-    public void FilterButton()
-    {
+    public void FilterButton() {
         filtersbox.setVisible(true);
     }
-    @FXML
-    public void SortButton()
-    {
 
+    /**
+     * Zmienia kierunek sortowania.
+     */
+    @FXML
+    public void SortButton() {
         priceDESC = !priceDESC;
-        SortChangeButton.setText(priceDESC? "Aktualnie: Ceną w dół" : "Aktualnie: Ceną w górę");
+        SortChangeButton.setText(priceDESC ? "Aktualnie: Ceną w dół" : "Aktualnie: Ceną w górę");
         Refresh();
     }
+
+    /**
+     * Anuluje i zamyka widok filtrów.
+     */
     @FXML
-    public void CancelFilter()
-    {
+    public void CancelFilter() {
         filtersbox.setVisible(false);
     }
+
+    /**
+     * Potwierdza zastosowanie filtrów na ofertach.
+     * Zmienia wartości filtrów na podstawie wprowadzonych danych, a następnie odświeża widok ofert.
+     * W przypadku błędnych danych liczbowych, wyświetla komunikat błędu.
+     */
     @FXML
-    public void ConfirmFilter()
-    {
+    public void ConfirmFilter() {
         priceMinValue = -1;
         priceMaxValue = -1;
         yearMinValue = -1;
@@ -318,4 +466,3 @@ public class OffersController {
         filtersbox.setVisible(false);
     }
 }
-

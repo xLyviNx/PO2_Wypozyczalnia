@@ -1,6 +1,8 @@
 package org.projektpo2;
 
-class DisconnectException extends RuntimeException
-{
+/**
+ * Wyjątek rzucany w przypadku utraty połączenia z serwerem.
+ */
+class DisconnectException extends RuntimeException {
 
 }
