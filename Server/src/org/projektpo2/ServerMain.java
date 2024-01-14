@@ -34,11 +34,11 @@ public class ServerMain {
      */
     public static void main(String[] args) {
         initializePaths();
-        if (args.length == 7) {
+        if (args.length == 6) {
             initializeImageDirectory();
             initializeServer(args);
         } else {
-            logger.log(Level.SEVERE, "Nieprawidłowa liczba argumentów. Oczekiwano 7 argumentów.");
+            logger.log(Level.SEVERE, "Nieprawidłowa liczba argumentów. Oczekiwano 6 argumentów.");
         }
     }
 

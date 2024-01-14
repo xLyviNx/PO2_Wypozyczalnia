@@ -1,6 +1,7 @@
 package org.projektpo2;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -38,17 +39,6 @@ public class IPAndPortInputPopup extends Application {
      */
     @Override
     public void start(Stage primaryStage) {
-        Button openInputDialogButton = new Button("Open Input Dialog");
-        openInputDialogButton.setOnAction(event -> showInputDialog());
-
-        VBox vbox = new VBox(10);
-        vbox.setAlignment(Pos.CENTER);
-        vbox.getChildren().addAll(openInputDialogButton);
-
-        Scene scene = new Scene(vbox, 250, 150);
-        primaryStage.setScene(scene);
-
-        primaryStage.show();
     }
 
     /**
@@ -57,7 +47,7 @@ public class IPAndPortInputPopup extends Application {
     public void showInputDialog() {
         Stage inputStage = new Stage();
         inputStage.initModality(Modality.APPLICATION_MODAL);
-        inputStage.setTitle("Enter IP and Port");
+        inputStage.setTitle("Podaj IP oraz PORT");
 
         Label ipLabel = new Label("IP:");
         Label portLabel = new Label("Port:");
@@ -72,7 +62,7 @@ public class IPAndPortInputPopup extends Application {
             if (validatePort(port)) {
                 inputStage.close();
             } else {
-                showAlert("Invalid Port", "Please enter a valid port number.");
+                showAlert("Nieprawidłowy Port", "Podano nieprawidłowy port.");
             }
         });
 
@@ -80,9 +70,12 @@ public class IPAndPortInputPopup extends Application {
         vbox.setAlignment(Pos.CENTER);
         vbox.getChildren().addAll(ipLabel, ipTextField, portLabel, portTextField, submitButton);
 
-        Scene scene = new Scene(vbox, 250, 150);
+        Scene scene = new Scene(vbox, 300, 150);
         inputStage.setScene(scene);
-
+        inputStage.setOnCloseRequest(t -> {
+            Platform.exit();
+            System.exit(2);
+        });
         inputStage.showAndWait();
     }
 
@@ -95,7 +88,7 @@ public class IPAndPortInputPopup extends Application {
     private boolean validatePort(String port) {
         try {
             int portNumber = Integer.parseInt(port);
-            return portNumber > 0 && portNumber <= 65535; // Port musi być liczbą z zakresu 1-65535
+            return portNumber > 0 && portNumber <= 65535;
         } catch (NumberFormatException e) {
             return false;
         }

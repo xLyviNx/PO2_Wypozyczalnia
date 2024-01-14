@@ -58,8 +58,12 @@ public class WypozyczalniaOkno extends Application {
             primaryStage.show();
 
             primaryStage.setOnCloseRequest(t -> {
+                if (Client.instance!=null)
+                {
+                    Client.instance.SendQuit();
+                }
                 Platform.exit();
-                System.exit(0);
+                //System.exit(1);
             });
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getClass().toString(), e);

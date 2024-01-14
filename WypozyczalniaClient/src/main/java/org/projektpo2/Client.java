@@ -23,6 +23,10 @@ public class Client {
      * Instancja klienta (singleton).
      */
     public static Client instance;
+    /**
+     * Czy połączenie klienta jest zamykane.
+     */
+    public static boolean quitting;
 
     /**
      * Socket służący do komunikacji z serwerem.
@@ -57,6 +61,8 @@ public class Client {
             startPingThread();
 
             while (socket.isConnected() && isWindowInstanceAvailable()) {
+                if (quitting)
+                    return;
                 NetData data = receiveData();
                 if (data != null) {
                     handleReceivedData(data);
@@ -65,8 +71,10 @@ public class Client {
 
             logger.log(Level.INFO, "DISCONNECTED.");
         } catch (ConnectException e) {
+            if (quitting) return;
             handleConnectionException(e);
         } catch (IOException | ClassNotFoundException e) {
+            if (quitting) return;
             logger.log(Level.SEVERE, "Error during communication with the server: " + e.getMessage(), e);
             throw new DisconnectException();
         } finally {
@@ -111,10 +119,10 @@ public class Client {
      */
     private void startPingThread() {
         Thread pings = new Thread(() -> {
-            while (socket.isConnected() && isWindowInstanceAvailable()) {
-                sleep(1000);
+            while (socket.isConnected() && isWindowInstanceAvailable() && !quitting) {
                 try {
                     sendPing();
+                    sleep(1000);
                 } catch (SocketException socketExc) {
                     handlePingError(socketExc);
                 } catch (IOException e) {
@@ -149,7 +157,9 @@ public class Client {
      *
      * @throws IOException Wyjątek w przypadku problemów związanych z socketem.
      */
-    private void sendPing() throws IOException {
+    private void sendPing() throws IOException
+    {
+        if (quitting)return;
         output.writeObject(new NetData(NetData.Operation.Ping));
         output.flush();
     }
@@ -678,5 +688,14 @@ public class Client {
             errorAlert.setContentText(content);
             errorAlert.show();
         });
+    }
+    /**
+     * Wysyła do serwera informację o zamknięciu aplikacji.
+     */
+    public void SendQuit()
+    {
+        quitting=true;
+        NetData quitpacket = new NetData(NetData.Operation.Exit);
+        SendRequest(quitpacket);
     }
 }
