@@ -261,8 +261,11 @@ public class Server {
             sendError(output, "Nie możesz wykonać tej operacji! (Brak uprawnień lub wylogowano)");
             return;
         }
-        DatabaseHandler dbh = new DatabaseHandler();
-        if (!checkDBConnection(dbh, output)) {
+        DatabaseHandler dbh;
+        try {
+            dbh = new DatabaseHandler();
+        } catch (SQLException e) {
+            sendDBError(output);
             return;
         }
         ConfirmationRepository confirmationRepository = new ConfirmationRepository(dbh);
@@ -276,7 +279,15 @@ public class Server {
             }
         });
     }
-
+    /**
+     * Metoda wysyłająca informację o błędzie bazy danych do klienta.
+     *
+     * @param oos   Strumień wyjściowy.
+     */
+    void sendDBError(ObjectOutputStream oos)
+    {
+        sendError(oos, "Błąd połączenia z bazą danych!");
+    }
     /**
      * Metoda obsługująca zarządzanie rezerwacją od klienta.
      *
@@ -291,7 +302,14 @@ public class Server {
             return;
         }
         ManageReservationRequest req = (ManageReservationRequest) data;
-        ReservationRepository reservationRepository = new ReservationRepository(new DatabaseHandler());
+        DatabaseHandler dbh = null;
+        try {
+            dbh = new DatabaseHandler();
+        } catch (SQLException e) {
+            sendDBError(output);
+            return;
+        }
+        ReservationRepository reservationRepository = new ReservationRepository(dbh);
         if (req.id != 0) {
             boolean success;
             if (req.confirm)
@@ -401,10 +419,18 @@ public class Server {
      * Metoda pobierająca uprawnienia użytkownika.
      *
      * @param session Sesja użytkownika.
+     * @param output Strumień wyjściowy.
      */
-    private void fetchUserPermissions(User session) {
+    private void fetchUserPermissions(User session, ObjectOutputStream output) {
         if (session.isSignedIn) {
-            UserRepository userRepository = new UserRepository(new DatabaseHandler());
+            DatabaseHandler dbh;
+            try {
+                dbh = new DatabaseHandler();
+            } catch (SQLException e) {
+                sendDBError(output);
+                return;
+            }
+            UserRepository userRepository = new UserRepository(dbh);
             userRepository.fetchUserPermissions(session);
         }
     }
@@ -422,7 +448,14 @@ public class Server {
             return;
         }
         ReservationRequestPacket resData = (ReservationRequestPacket) data;
-        ReservationRepository reservationRepository = new ReservationRepository(new DatabaseHandler());
+        DatabaseHandler dbh;
+        try {
+            dbh = new DatabaseHandler();
+        } catch (SQLException e) {
+            sendDBError(output);
+            return;
+        }
+        ReservationRepository reservationRepository = new ReservationRepository(dbh);
         if (!reservationRepository.reservationExists(resData.id)) {
             try {
                 reservationRepository.makeReservation(session.username, resData.id, resData.days);
@@ -449,11 +482,14 @@ public class Server {
     private void handleOfferDetails(NetData data, User session, ObjectOutputStream output) {
         OfferDetailsRequestPacket req = (OfferDetailsRequestPacket) data;
         if (req.id > 0) {
-            DatabaseHandler dbh = new DatabaseHandler();
+            DatabaseHandler dbh;
+            try {
+                dbh = new DatabaseHandler();
+            } catch (SQLException e) {
+                sendDBError(output);
+                return;
+            }
             try (dbh) {
-                if (!checkDBConnection(dbh, output)) {
-                    return;
-                }
                 OfferRepository offerRepository = new OfferRepository(dbh);
                 VehiclePacket response = offerRepository.getOfferDetails(req.id, session);
                 if (response != null) {
@@ -494,13 +530,15 @@ public class Server {
                 return;
             }
             if (regData.password.equals(regData.repeat_password)) {
-                DatabaseHandler dbh = new DatabaseHandler();
-
+                DatabaseHandler dbh;
+                try {
+                    dbh = new DatabaseHandler();
+                } catch (SQLException e) {
+                    sendDBError(output);
+                    return;
+                }
                 try (dbh) {
                     UserRepository userRepository = new UserRepository(dbh);
-                    if (!checkDBConnection(dbh, output)) {
-                        return;
-                    }
 
                     if (userRepository.isUserExists(regData.login, regData.phonenumber)) {
                         sendError(output, "Użytkownik o podanym loginie lub numerze telefonu już istnieje.");
@@ -513,7 +551,7 @@ public class Server {
                         output.flush();
                         session.isSignedIn = true;
                         session.username = regData.login;
-                        fetchUserPermissions(session);
+                        fetchUserPermissions(session, output);
                     } else {
                         sendError(output, "Nie udało się zarejestrować.");
                     }
@@ -544,17 +582,19 @@ public class Server {
         if (logdata.login.isEmpty() || logdata.password.isEmpty()) {
             sendError(output, "Żadne pole nie może być puste!");
         }
-        DatabaseHandler dbh = new DatabaseHandler();
-        try (dbh) {
+        DatabaseHandler dbh;
+        try {
+            dbh = new DatabaseHandler();
+        } catch (SQLException e) {
+            sendDBError(output);
+            return;
+        }        try (dbh) {
             UserRepository userRepository = new UserRepository(dbh);
-            if (!checkDBConnection(dbh, output)) {
-                return;
-            }
 
             if (userRepository.loginUser(logdata.login, logdata.password)) {
                 session.isSignedIn = true;
                 session.username = logdata.login;
-                fetchUserPermissions(session);
+                fetchUserPermissions(session, output);
                 NetData response = new NetData(NetData.Operation.Login);
                 response.operationType = NetData.OperationType.Success;
                 output.writeObject(response);
@@ -598,10 +638,14 @@ public class Server {
             logger.log(Level.SEVERE, "Error handling offer element request", e);
             throw new RuntimeException(e);
         }
-        try (DatabaseHandler dbh = new DatabaseHandler()) {
-            if (!checkDBConnection(dbh, output)) {
-                return;
-            }
+        DatabaseHandler dbh;
+        try {
+            dbh = new DatabaseHandler();
+        } catch (SQLException e) {
+            sendDBError(output);
+            return;
+        }
+        try (dbh) {
             OfferRepository offerRepository = new OfferRepository(dbh);
             FilteredOffersRequestPacket requestPacket = (FilteredOffersRequestPacket) data;
 
@@ -643,30 +687,6 @@ public class Server {
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error sending error message", e);
         }
-    }
-
-    /**
-     * Metoda sprawdzająca połączenie z bazą danych.
-     *
-     * @param dbh    Obiekt obsługujący połączenie z bazą danych.
-     * @param output Strumień wyjściowy.
-     * @return true, jeśli połączenie z bazą danych jest poprawne, w przeciwnym razie false.
-     */
-    boolean checkDBConnection(DatabaseHandler dbh, ObjectOutputStream output) {
-        try {
-            if (dbh.conn == null || dbh.conn.isClosed()) {
-                if (output != null)
-                    sendError(output, "Błąd połączenia z bazą danych.");
-                dbh.close();
-                return false;
-            }
-        } catch (SQLException e) {
-            if (output != null) {
-                sendError(output, "Błąd połączenia z bazą danych.");
-            }
-            return false;
-        }
-        return true;
     }
 
 }

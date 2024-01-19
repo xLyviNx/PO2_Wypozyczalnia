@@ -288,7 +288,7 @@ public class AddOfferController {
                     selectedThumbnail = new byte[0];
 
                 Client.instance.RequestAddOffer(marka.getText(), model.getText(), year, silnik.getText(), price, opis.getText(), selectedThumbnail, selectedImageName, selectedImages, selectedImagesNames, engineCapacity);
-                logger.info("Offer confirmation requested");
+                logger.info("Request add offer sent.");
             } catch (NumberFormatException ex) {
                 Client.MessageBox("Proszę wprowadzić poprawne wartości liczbowe dla roku, ceny i pojemności silnika.", Alert.AlertType.ERROR);
                 logger.log(Level.SEVERE, "NumberFormatException: " + ex.getMessage(), ex);

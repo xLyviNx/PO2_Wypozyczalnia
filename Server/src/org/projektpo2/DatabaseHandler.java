@@ -52,13 +52,16 @@ public class DatabaseHandler implements AutoCloseable {
     /**
      * Konstruktor inicjalizujący połączenie z bazą danych.
      */
-    public DatabaseHandler() {
+    public DatabaseHandler() throws SQLException {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(URL, USER, PASSWORD);
             statement = conn.createStatement();
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (SQLException e) {
             logger.log(Level.SEVERE, "Błąd połączenia z bazą danych", e);
+            throw e;
+        }
+        catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
