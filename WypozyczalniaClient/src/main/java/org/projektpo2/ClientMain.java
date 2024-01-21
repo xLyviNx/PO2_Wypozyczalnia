@@ -53,7 +53,12 @@ public class ClientMain {
             DisplayNoConnection();
         }
     }
-
+    /**
+     * Tworzy wątek klienta.
+     *
+     * @param cl Obiekt klienta, który będzie obsługiwany przez wątek.
+     * @return Nowo utworzony wątek klienta.
+     */
     private static Thread getThread(Client cl) {
         Thread clTh = new Thread(() -> {
             try {

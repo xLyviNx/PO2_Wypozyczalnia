@@ -1,0 +1,16 @@
+Dla serwera:
+(plik JAR mieści się w katalogu: Server\out\artifacts\serverWypozyczalnia_jar\)
+1. Należy pobrać xampp i uruchomić Apache, MySQL
+2. Stworzyć i zaimportować bazę danych (localhost -> phpMyAdmin -> CREATE DATABASE (nazwa)) (wypozyczalnia.sql)
+3. Stworzyć użytkownika dla bazy danych (domyślnie: uzytkownikbazy.txt)
+4. Dostosować dane logowania do bazy w pliku .bat (PORT, IP Bazy, PORT Bazy, NAZWA bazy, UZYTKOWNIK bazy, HASŁO bazy)
+5. Uruchomić plik .bat
+(w przypadku uruchomienia serwera z IDE upewnić się że wszystkie biblioteki są podpięte, np. mysql-connector-j-8.2.0.jar)
+
+Dla klienta:
+(plik JAR mieści się w katalogu: WypozyczalniaClient\out\artifacts\WypozyczalniaClient_jar\)
+1. Uruchomić plik JAR
+2. Wpisać adres IP i PORT
+Alternatywnie dla klienta: 
+1. Stworzyć plik bat uruchamiający klienta z argumentami kolejno: IP, PORT.
+2. Uruchomić

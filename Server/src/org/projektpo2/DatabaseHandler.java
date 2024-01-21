@@ -51,6 +51,7 @@ public class DatabaseHandler implements AutoCloseable {
 
     /**
      * Konstruktor inicjalizujący połączenie z bazą danych.
+     * @throws SQLException Wyjątek SQL
      */
     public DatabaseHandler() throws SQLException {
         try {

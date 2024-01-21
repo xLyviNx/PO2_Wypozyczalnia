@@ -404,7 +404,13 @@ public class Client {
         NetData req = new NetData(NetData.Operation.ConfirmationsButton);
         SendRequest(req);
     }
-
+    /**
+     * Obsługuje odpowiedź serwera na żądanie zarządzania rezerwacją.
+     * Aktualizuje widok potwierdzenia rezerwacji w przypadku powodzenia.
+     * Wyświetla stosowne komunikaty informacyjne.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleReservationManagementResponse(NetData data) {
         ManageReservationRequest mreq= (ManageReservationRequest)data;
         if (mreq==null)return;
@@ -418,27 +424,50 @@ public class Client {
             }
         });
     }
+    /**
+     * Obsługuje odpowiedź serwera na rejestrację.
+     * Wyświetla stosowny komunikat informacyjny w przypadku powodzenia.
+     * Otwiera scenę ofert po poprawnej rejestracji.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleRegisterResponse(NetData data) {
         if (data.operationType == NetData.OperationType.Success) {
             MessageBox("Zarejestrowano.", Alert.AlertType.INFORMATION);
             Platform.runLater(OffersController::openScene);
         }
     }
-
+    /**
+     * Obsługuje odpowiedź serwera na logowanie.
+     * Wyświetla stosowny komunikat informacyjny w przypadku powodzenia.
+     * Otwiera scenę ofert po poprawnym zalogowaniu.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleLoginResponse(NetData data) {
         if (data.operationType == NetData.OperationType.Success) {
             MessageBox("Zalogowano.", Alert.AlertType.INFORMATION);
             Platform.runLater(OffersController::openScene);
         }
     }
-
+    /**
+     * Obsługuje odpowiedź na żądanie nazwy użytkownika w ofertach.
+     * Aktualizuje nazwę użytkownika w kontrolerze ofert.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleOfferUsernameResponse(NetData data) {
         UsernamePacket up = (UsernamePacket) data;
         if (up != null) {
             OffersController.setUsername(up.username);
         }
     }
-
+    /**
+     * Obsługuje otrzymane dane oferty od serwera.
+     * Dodaje nowy węzeł oferty do kontrolera ofert.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleOfferElementResponse(NetData data)
     {
         VehiclePacket vp = (VehiclePacket) data;
@@ -452,7 +481,12 @@ public class Client {
             }
         }
     }
-
+    /**
+     * Obsługuje odpowiedź na żądanie szczegółów oferty.
+     * Aktualizuje nagłówek i szczegóły oferty w kontrolerze szczegółów oferty.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleOfferDetailsResponse(NetData data) {
         if (OfferDetailsController.instance == null) {
             return;
@@ -465,7 +499,13 @@ public class Client {
         offerDetailsController.addImages(vp.images);
         offerDetailsController.checkImage();
     }
-
+    /**
+     * Obsługuje odpowiedź na żądanie wylogowania.
+     * Otwiera stronę startową po poprawnym wylogowaniu.
+     * Wyświetla stosowny komunikat informacyjny.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleLogoutResponse(NetData data) {
         Platform.runLater(() -> {
             try {
@@ -477,7 +517,13 @@ public class Client {
             }
         });
     }
-
+    /**
+     * Obsługuje odpowiedź na żądanie rezerwacji.
+     * Otwiera scenę ofert po poprawnej rezerwacji.
+     * Wyświetla stosowny komunikat informacyjny.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleReservationRequestResponse(NetData data) {
         if (data.operationType == NetData.OperationType.Success) {
             Platform.runLater(() -> {
@@ -486,7 +532,12 @@ public class Client {
             });
         }
     }
-
+    /**
+     * Obsługuje odpowiedź na widoczność przycisku dodawania oferty.
+     * Aktualizuje widoczność przycisku w kontrolerze ofert.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleAddButtonResponse(NetData data) {
         AddOfferButtonVisibility vis = (AddOfferButtonVisibility) data;
         Platform.runLater(() -> {
@@ -495,7 +546,13 @@ public class Client {
             }
         });
     }
-
+    /**
+     * Obsługuje odpowiedź serwera na dodanie oferty.
+     * Wyświetla stosowne komunikaty informacyjne.
+     * Otwiera scenę ofert po poprawnym dodaniu oferty.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleAddOfferResponse(NetData data) {
         Platform.runLater(() -> {
             if (data.operationType == NetData.OperationType.Success) {
@@ -508,7 +565,13 @@ public class Client {
             }
         });
     }
-
+    /**
+     * Obsługuje odpowiedź serwera na usunięcie oferty.
+     * Wyświetla stosowny komunikat informacyjny.
+     * Otwiera scenę ofert po poprawnym usunięciu oferty.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleDeleteOfferResponse(NetData data) {
         Platform.runLater(() -> {
             if (data.operationType == NetData.OperationType.Success) {
@@ -517,7 +580,12 @@ public class Client {
             }
         });
     }
-
+    /**
+     * Obsługuje odpowiedź na element rezerwacji.
+     * Dodaje przycisk rezerwacji do kontrolera potwierdzeń.
+     *
+     * @param data Dane odpowiedzi sieciowej.
+     */
     private void handleReservationElementResponse(NetData data) {
         ReservationElement element = (ReservationElement) data;
         Platform.runLater(() -> {

@@ -27,8 +27,13 @@ import java.util.logging.*;
 public class ConfirmationController {
     private static final Logger logger = Utilities.getLogger(ConfirmationController.class);
 
+    /** Instancja kontrolera. */
     public static ConfirmationController instance;
+
+    /** Scena JavaFX powiązana z kontrolerem. */
     public Scene scene;
+
+    /** Kontener typu VBox w interfejsie użytkownika. */
     @FXML
     private VBox container;
 

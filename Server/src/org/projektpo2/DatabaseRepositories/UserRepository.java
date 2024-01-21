@@ -13,6 +13,7 @@ import java.util.logging.Logger;
  */
 public class UserRepository {
     private static final Logger logger = Logger.getLogger(UserRepository.class.getName());
+
     private final DatabaseHandler dbh;
 
     /**

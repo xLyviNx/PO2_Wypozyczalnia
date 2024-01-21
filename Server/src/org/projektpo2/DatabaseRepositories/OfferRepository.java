@@ -398,12 +398,23 @@ public class OfferRepository {
         return queryBuilder.toString();
     }
 
+    /**
+     * Dodaje warunek dotyczący marki do zapytania SQL.
+     *
+     * @param queryBuilder Builder zapytania SQL.
+     * @param requestPacket Pakiet żądania filtrowania.
+     */
     private void appendBrandCondition(StringBuilder queryBuilder, FilteredOffersRequestPacket requestPacket) {
         if (requestPacket.brand != null && !requestPacket.brand.isEmpty() && !requestPacket.brand.equals("KAŻDA")) {
             queryBuilder.append("AND a.`marka` = ? ");
         }
     }
-
+    /**
+     * Dodaje warunek dotyczący roku produkcji do zapytania SQL.
+     *
+     * @param queryBuilder Builder zapytania SQL.
+     * @param requestPacket Pakiet żądania filtrowania.
+     */
     private void appendYearCondition(StringBuilder queryBuilder, FilteredOffersRequestPacket requestPacket) {
         if (requestPacket.yearMin != -1) {
             queryBuilder.append("AND a.`rok_prod` >= ? ");
@@ -413,7 +424,12 @@ public class OfferRepository {
             queryBuilder.append("AND a.`rok_prod` <= ? ");
         }
     }
-
+    /**
+     * Dodaje warunek dotyczący pojemności silnika do zapytania SQL.
+     *
+     * @param queryBuilder Builder zapytania SQL.
+     * @param requestPacket Pakiet żądania filtrowania.
+     */
     private void appendEngineCapCondition(StringBuilder queryBuilder, FilteredOffersRequestPacket requestPacket) {
         if (requestPacket.engineCapMin != -1) {
             queryBuilder.append("AND a.`pojemnosc` >= ? ");
@@ -423,7 +439,12 @@ public class OfferRepository {
             queryBuilder.append("AND a.`pojemnosc` <= ? ");
         }
     }
-
+    /**
+     * Dodaje warunek dotyczący ceny do zapytania SQL.
+     *
+     * @param queryBuilder Builder zapytania SQL.
+     * @param requestPacket Pakiet żądania filtrowania.
+     */
     private void appendPriceCondition(StringBuilder queryBuilder, FilteredOffersRequestPacket requestPacket) {
         if (requestPacket.priceMin != -1) {
             queryBuilder.append("AND a.`cenaZaDzien` >= ? ");
@@ -473,10 +494,15 @@ public class OfferRepository {
             preparedStatement.setFloat(parameterIndex++, requestPacket.priceMax);
         }
     }
-
+    /**
+     * Pobiera zbiór marek pojazdów spełniających kryteria filtrowania.
+     *
+     * @param requestPacket Pakiet z żądaniem filtrowania ofert.
+     * @param session Obiekt użytkownika z bieżącą sesją.
+     * @return Zbiór marek pojazdów spełniających kryteria filtrowania.
+     */
     public HashSet<String> getFilteredBrands(FilteredOffersRequestPacket requestPacket, User session) {
         HashSet<String> filteredBrands = new HashSet<>();
-
         try {
             String brandQuery = buildBrandQuery();
             PreparedStatement brandStatement = dbh.conn.prepareStatement(brandQuery);

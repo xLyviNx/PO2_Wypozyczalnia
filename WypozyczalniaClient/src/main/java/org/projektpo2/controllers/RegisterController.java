@@ -111,6 +111,7 @@ public class RegisterController {
     /**
      * Obsługuje przycisk rejestracji.
      * Sprawdza wprowadzone dane i wysyła żądanie rejestracji do klienta.
+     * @param event event
      */
     @FXML
     private void RegisterButton(ActionEvent event) {
